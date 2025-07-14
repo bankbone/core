@@ -4,13 +4,11 @@ import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerTransaction
 import com.bankbone.core.ledger.ports.ChartOfAccountsRepository
 import com.bankbone.core.ledger.ports.LedgerTransactionRepository
-import com.bankbone.core.sharedkernel.ports.DomainEventPublisher
 import java.util.*
 
 class LedgerPostingService(
     private val ledgerTransactionRepository: LedgerTransactionRepository,
-    private val chartOfAccountsRepository: ChartOfAccountsRepository,
-    private val domainEventPublisher: DomainEventPublisher
+    private val chartOfAccountsRepository: ChartOfAccountsRepository
 ) {
     suspend fun createAndPostTransaction(
         sourceTransactionId: String,
@@ -35,11 +33,6 @@ class LedgerPostingService(
         )
 
         ledgerTransactionRepository.save(transaction)
-
-        // Publish domain events after the transaction is successfully saved
-        domainEventPublisher.publish(transaction.domainEvents())
-        transaction.clearEvents()
-
         return transaction
     }
 }

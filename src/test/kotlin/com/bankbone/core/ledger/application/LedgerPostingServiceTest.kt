@@ -4,12 +4,12 @@ import com.bankbone.core.ledger.domain.Account
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
-import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.ledger.infrastructure.InMemoryChartOfAccountsRepository
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerTransactionRepository
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
-import com.bankbone.core.sharedkernel.infrastructure.InMemoryDomainEventPublisher
+import com.bankbone.core.sharedkernel.infrastructure.JacksonEventSerializer
+import com.bankbone.core.sharedkernel.infrastructure.InMemoryOutboxRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -20,15 +20,17 @@ class LedgerPostingServiceTest {
 
     private lateinit var ledgerTransactionRepository: InMemoryLedgerTransactionRepository
     private lateinit var chartOfAccountsRepository: InMemoryChartOfAccountsRepository
-    private lateinit var domainEventPublisher: InMemoryDomainEventPublisher
+    private lateinit var outboxRepository: InMemoryOutboxRepository
+    private lateinit var eventSerializer: JacksonEventSerializer
     private lateinit var ledgerPostingService: LedgerPostingService
 
     @BeforeEach
     fun setUp() {
-        ledgerTransactionRepository = InMemoryLedgerTransactionRepository()
+        outboxRepository = InMemoryOutboxRepository()
+        eventSerializer = JacksonEventSerializer()
+        ledgerTransactionRepository = InMemoryLedgerTransactionRepository(outboxRepository, eventSerializer)
         chartOfAccountsRepository = InMemoryChartOfAccountsRepository()
-        domainEventPublisher = InMemoryDomainEventPublisher()
-        ledgerPostingService = LedgerPostingService(ledgerTransactionRepository, chartOfAccountsRepository, domainEventPublisher)
+        ledgerPostingService = LedgerPostingService(ledgerTransactionRepository, chartOfAccountsRepository)
 
         val brl = Asset("BRL")
 
@@ -62,12 +64,13 @@ class LedgerPostingServiceTest {
         assertEquals(2, savedTransaction!!.entries.size)
         assertEquals("sourceTxId", savedTransaction.sourceTransactionId)
 
-        // Verify that the domain event was published
-        assertEquals(1, domainEventPublisher.publishedEvents.size)
-        val event = domainEventPublisher.publishedEvents.first() as LedgerTransactionPosted
-        assertEquals(createdTransaction.id, event.transactionId)
-        assertEquals(BigDecimal(100), event.totalAmount)
-        assertEquals(brl, event.asset)
+        // Verify that the event was saved to the outbox
+        assertEquals(1, outboxRepository.events.size)
+        val outboxEvent = outboxRepository.events.values.first()
+        assertEquals(createdTransaction.id, outboxEvent.aggregateId)
+        assertEquals("LedgerTransactionPosted", outboxEvent.eventType)
+        assertTrue(outboxEvent.payload.contains(""""transactionId":"${createdTransaction.id}""""))
+        assertTrue(outboxEvent.payload.contains(""""totalAmount":100"""))
     }
 
     @Test

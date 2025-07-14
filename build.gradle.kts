@@ -22,6 +22,10 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.config.yaml)
 
+    // Jackson for JSON Serialization/Deserialization
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.1")
+
     // Import the JUnit 5 BOM to manage and align all JUnit dependency versions.
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation(libs.ktor.server.test.host)
