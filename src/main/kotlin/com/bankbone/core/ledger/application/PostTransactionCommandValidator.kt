@@ -3,10 +3,8 @@ package com.bankbone.core.ledger.application
 import com.bankbone.core.ledger.application.commands.PostTransactionCommand
 import com.bankbone.core.ledger.ports.ChartOfAccountsRepository
 
-class PostTransactionCommandValidator(
-    private val chartOfAccountsRepository: ChartOfAccountsRepository
-) {
-    suspend fun validate(command: PostTransactionCommand) {
+class PostTransactionCommandValidator {
+    suspend fun validate(command: PostTransactionCommand, chartOfAccountsRepository: ChartOfAccountsRepository) {
         // 1. Basic command validation
         require(command.sourceTransactionId.isNotBlank()) { "Source transaction ID must not be blank." }
         require(command.description.isNotBlank()) { "Description must not be blank." }

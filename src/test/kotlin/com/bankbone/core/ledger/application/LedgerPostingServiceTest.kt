@@ -5,12 +5,9 @@ import com.bankbone.core.ledger.domain.Account
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
-import com.bankbone.core.ledger.infrastructure.InMemoryChartOfAccountsRepository
-import com.bankbone.core.ledger.infrastructure.InMemoryLedgerTransactionRepository
+import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
-import com.bankbone.core.sharedkernel.infrastructure.JacksonEventSerializer
-import com.bankbone.core.sharedkernel.infrastructure.InMemoryOutboxRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -19,26 +16,21 @@ import java.math.BigDecimal
 
 class LedgerPostingServiceTest {
 
-    private lateinit var ledgerTransactionRepository: InMemoryLedgerTransactionRepository
-    private lateinit var chartOfAccountsRepository: InMemoryChartOfAccountsRepository
-    private lateinit var outboxRepository: InMemoryOutboxRepository
-    private lateinit var eventSerializer: JacksonEventSerializer
+    private lateinit var uowFactory: InMemoryLedgerUnitOfWorkFactory
     private lateinit var validator: PostTransactionCommandValidator
     private lateinit var ledgerPostingService: LedgerPostingService
 
     @BeforeEach
     fun setUp() {
-        outboxRepository = InMemoryOutboxRepository()
-        eventSerializer = JacksonEventSerializer()
-        ledgerTransactionRepository = InMemoryLedgerTransactionRepository(outboxRepository, eventSerializer)
-        chartOfAccountsRepository = InMemoryChartOfAccountsRepository()
-        validator = PostTransactionCommandValidator(chartOfAccountsRepository)
-        ledgerPostingService = LedgerPostingService(ledgerTransactionRepository, validator)
+        uowFactory = InMemoryLedgerUnitOfWorkFactory()
+        validator = PostTransactionCommandValidator()
+        ledgerPostingService = LedgerPostingService(uowFactory, validator)
 
         val brl = Asset("BRL")
 
         // Add accounts to the Chart of Accounts
         runBlocking {
+            val chartOfAccountsRepository = uowFactory.chartOfAccountsRepository
             chartOfAccountsRepository.add(
                 Account(id = "account1", name = "Cash Account", type = AccountType.ASSET, asset = brl)
             )
@@ -62,14 +54,15 @@ class LedgerPostingServiceTest {
             entries = entries
         )
         val createdTransaction = ledgerPostingService.postTransaction(command)
-        val savedTransaction = ledgerTransactionRepository.findById(createdTransaction.id)
+
+        val savedTransaction = uowFactory.create().ledgerTransactionRepository().findById(createdTransaction.id)
         assertNotNull(savedTransaction)
         assertEquals(2, savedTransaction!!.entries.size)
         assertEquals("sourceTxId", savedTransaction.sourceTransactionId)
 
         // Verify that the event was saved to the outbox
-        assertEquals(1, outboxRepository.events.size)
-        val outboxEvent = outboxRepository.events.values.first()
+        assertEquals(1, uowFactory.outboxRepository.events.size)
+        val outboxEvent = uowFactory.outboxRepository.events.values.first()
         assertEquals(createdTransaction.id, outboxEvent.aggregateId)
         assertEquals("LedgerTransactionPosted", outboxEvent.eventType)
         assertTrue(outboxEvent.payload.contains(""""transactionId":"${createdTransaction.id}""""))

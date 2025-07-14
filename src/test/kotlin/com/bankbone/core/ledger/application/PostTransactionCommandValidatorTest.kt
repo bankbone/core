@@ -23,7 +23,7 @@ class PostTransactionCommandValidatorTest {
     @BeforeEach
     fun setUp() {
         chartOfAccountsRepository = InMemoryChartOfAccountsRepository()
-        validator = PostTransactionCommandValidator(chartOfAccountsRepository)
+        validator = PostTransactionCommandValidator()
 
         runBlocking {
             chartOfAccountsRepository.add(
@@ -41,14 +41,14 @@ class PostTransactionCommandValidatorTest {
                 LedgerEntry("account1", Amount(BigDecimal.TEN, Asset("BRL")), LedgerEntryType.DEBIT)
             )
         )
-        validator.validate(command)
+        validator.validate(command, chartOfAccountsRepository)
     }
 
     @Test
     fun `should throw error for blank source transaction ID`() = runBlocking {
         val command = PostTransactionCommand(" ", "Valid transaction", emptyList())
         val exception = assertFailsWith<IllegalArgumentException> {
-            validator.validate(command)
+            validator.validate(command, chartOfAccountsRepository)
         }
         assertEquals("Source transaction ID must not be blank.", exception.message)
     }
@@ -57,7 +57,7 @@ class PostTransactionCommandValidatorTest {
     fun `should throw error for blank description`() = runBlocking {
         val command = PostTransactionCommand("tx1", "", emptyList())
         val exception = assertFailsWith<IllegalArgumentException> {
-            validator.validate(command)
+            validator.validate(command, chartOfAccountsRepository)
         }
         assertEquals("Description must not be blank.", exception.message)
     }
@@ -66,7 +66,7 @@ class PostTransactionCommandValidatorTest {
     fun `should throw error for non-existent account`() = runBlocking {
         val command = PostTransactionCommand("tx1", "Invalid", listOf(LedgerEntry("non-existent", Amount(BigDecimal.TEN, Asset("BRL")), LedgerEntryType.DEBIT)))
         val exception = assertFailsWith<IllegalArgumentException> {
-            validator.validate(command)
+            validator.validate(command, chartOfAccountsRepository)
         }
         assertEquals("Accounts do not exist or are not active in the Chart of Accounts: non-existent", exception.message)
     }

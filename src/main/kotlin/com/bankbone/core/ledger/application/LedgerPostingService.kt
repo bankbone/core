@@ -1,28 +1,28 @@
 package com.bankbone.core.ledger.application
 
 import com.bankbone.core.ledger.application.commands.PostTransactionCommand
-import com.bankbone.core.ledger.application.PostTransactionCommandValidator
 import com.bankbone.core.ledger.domain.LedgerTransaction
-import com.bankbone.core.ledger.ports.LedgerTransactionRepository
+import com.bankbone.core.ledger.ports.LedgerUnitOfWorkFactory
+import com.bankbone.core.ledger.ports.LedgerUnitOfWork
 import java.util.*
 
 class LedgerPostingService(
-    private val ledgerTransactionRepository: LedgerTransactionRepository,
+    private val uowFactory: LedgerUnitOfWorkFactory,
     private val validator: PostTransactionCommandValidator
 ) {
     suspend fun postTransaction(command: PostTransactionCommand): LedgerTransaction {
-        // 1. Delegate validation to the dedicated validator class.
-        validator.validate(command)
+        return uowFactory.create().transaction { uow ->
+            val chartOfAccountsRepo = (uow as LedgerUnitOfWork).chartOfAccountsRepository()
+            val transactionRepo = uow.ledgerTransactionRepository()
 
-        // 2. The service's core responsibility: orchestrate the domain and repository.
-        val transaction = LedgerTransaction(
-            id = UUID.randomUUID().toString(),
-            sourceTransactionId = command.sourceTransactionId,
-            description = command.description,
-            entries = command.entries
-        )
+            // 1. Delegate validation to the dedicated validator class, using the repo from the UoW.
+            validator.validate(command, chartOfAccountsRepo)
 
-        ledgerTransactionRepository.save(transaction)
-        return transaction
+            // 2. The service's core responsibility: orchestrate the domain and repository.
+            val transaction = LedgerTransaction(id = UUID.randomUUID().toString(), sourceTransactionId = command.sourceTransactionId, description = command.description, entries = command.entries)
+
+            transactionRepo.save(transaction)
+            transaction
+        }
     }
 }
