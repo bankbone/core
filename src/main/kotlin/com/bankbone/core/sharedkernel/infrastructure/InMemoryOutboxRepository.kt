@@ -20,7 +20,17 @@ class InMemoryOutboxRepository : OutboxRepository {
             .take(limit)
     }
 
-    override suspend fun markAsProcessed(event: OutboxEvent) {
-        events[event.id] = event.copy(status = OutboxEventStatus.PUBLISHED, processedAt = Instant.now())
+    override suspend fun markAsProcessed(events: List<OutboxEvent>) {
+        events.forEach { event ->
+            val currentEvent = this.events[event.id] ?: event
+            this.events[event.id] = currentEvent.copy(status = OutboxEventStatus.PUBLISHED, processedAt = Instant.now())
+        }
+    }
+
+    override suspend fun markAsFailed(events: List<OutboxEvent>, error: String?, finalAttemptCount: Int) {
+        events.forEach { event ->
+            val currentEvent = this.events[event.id] ?: event
+            this.events[event.id] = currentEvent.copy(status = OutboxEventStatus.FAILED, lastError = error, attemptCount = finalAttemptCount)
+        }
     }
 }

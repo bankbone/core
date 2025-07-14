@@ -12,5 +12,7 @@ data class OutboxEvent(
     val payload: String,
     val status: OutboxEventStatus = OutboxEventStatus.PENDING,
     val createdAt: Instant = Instant.now(),
-    val processedAt: Instant? = null
+    val processedAt: Instant? = null,
+    val attemptCount: Int = 0,
+    val lastError: String? = null
 )

@@ -53,4 +53,47 @@ class OutboxEventRelayServiceTest {
         // Assert: The event in the outbox is now marked as PUBLISHED
         assertEquals(OutboxEventStatus.PUBLISHED, outboxRepository.events[pendingEvent.id]?.status)
     }
+
+    @Test
+    fun `should retry on failure and succeed`() = runBlocking {
+        // Arrange: Simulate 2 failures before success
+        domainEventPublisher.setFailures(2)
+        val pendingEvent = OutboxEvent(
+            aggregateId = "tx1",
+            eventType = "LedgerTransactionPosted",
+            payload = """{"transactionId":"tx1","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+        )
+        outboxRepository.save(pendingEvent)
+
+        // Act
+        relayService.relayPendingEvents()
+
+        // Assert: Publisher was called 3 times
+        assertEquals(3, domainEventPublisher.attempts)
+        // Assert: Event was eventually published
+        assertEquals(1, domainEventPublisher.publishedEvents.size)
+        // Assert: Event is marked as PUBLISHED
+        assertEquals(OutboxEventStatus.PUBLISHED, outboxRepository.events[pendingEvent.id]?.status)
+    }
+
+    @Test
+    fun `should mark as FAILED after max attempts`() = runBlocking {
+        // Arrange: Simulate 5 failures
+        domainEventPublisher.setFailures(5)
+        val pendingEvent = OutboxEvent(
+            aggregateId = "tx1",
+            eventType = "LedgerTransactionPosted",
+            payload = """{"transactionId":"tx1","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+        )
+        outboxRepository.save(pendingEvent)
+
+        // Act
+        relayService.relayPendingEvents()
+
+        // Assert: Event is marked as FAILED with an error message
+        val failedEvent = outboxRepository.events[pendingEvent.id]
+        assertEquals(OutboxEventStatus.FAILED, failedEvent?.status)
+        assertEquals(5, failedEvent?.attemptCount)
+        assertTrue(failedEvent?.lastError!!.contains("Simulated publisher failure on attempt 5"))
+    }
 }
