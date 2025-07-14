@@ -1,5 +1,6 @@
 package com.bankbone.core.ledger.application
 
+import com.bankbone.core.ledger.application.commands.PostTransactionCommand
 import com.bankbone.core.ledger.domain.Account
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
@@ -22,6 +23,7 @@ class LedgerPostingServiceTest {
     private lateinit var chartOfAccountsRepository: InMemoryChartOfAccountsRepository
     private lateinit var outboxRepository: InMemoryOutboxRepository
     private lateinit var eventSerializer: JacksonEventSerializer
+    private lateinit var validator: PostTransactionCommandValidator
     private lateinit var ledgerPostingService: LedgerPostingService
 
     @BeforeEach
@@ -30,7 +32,8 @@ class LedgerPostingServiceTest {
         eventSerializer = JacksonEventSerializer()
         ledgerTransactionRepository = InMemoryLedgerTransactionRepository(outboxRepository, eventSerializer)
         chartOfAccountsRepository = InMemoryChartOfAccountsRepository()
-        ledgerPostingService = LedgerPostingService(ledgerTransactionRepository, chartOfAccountsRepository)
+        validator = PostTransactionCommandValidator(chartOfAccountsRepository)
+        ledgerPostingService = LedgerPostingService(ledgerTransactionRepository, validator)
 
         val brl = Asset("BRL")
 
@@ -53,12 +56,12 @@ class LedgerPostingServiceTest {
             LedgerEntry("account2", Amount(BigDecimal(100), brl), LedgerEntryType.CREDIT, "Credit entry")
         )
 
-        val createdTransaction = ledgerPostingService.createAndPostTransaction(
+        val command = PostTransactionCommand(
             sourceTransactionId = "sourceTxId",
             description = "Test transaction",
             entries = entries
         )
-
+        val createdTransaction = ledgerPostingService.postTransaction(command)
         val savedTransaction = ledgerTransactionRepository.findById(createdTransaction.id)
         assertNotNull(savedTransaction)
         assertEquals(2, savedTransaction!!.entries.size)
@@ -81,10 +84,9 @@ class LedgerPostingServiceTest {
             LedgerEntry("account2", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")
         )
 
+        val command = PostTransactionCommand("sourceTxId", "Test transaction", entries)
         val exception = assertFailsWith<IllegalArgumentException> {
-            ledgerPostingService.createAndPostTransaction(sourceTransactionId = "sourceTxId",
-                description = "Test transaction",
-                entries = entries)
+            ledgerPostingService.postTransaction(command)
         }
 
         assertTrue(exception.message!!.startsWith("Ledger transaction is unbalanced."))
@@ -99,10 +101,9 @@ class LedgerPostingServiceTest {
             LedgerEntry("account4", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")  // account4 does not exist
         )
 
+        val command = PostTransactionCommand("sourceTxId", "Test transaction", entries)
         val exception = assertFailsWith<IllegalArgumentException> {
-            ledgerPostingService.createAndPostTransaction(sourceTransactionId = "sourceTxId",
-                description = "Test transaction",
-                entries = entries)
+            ledgerPostingService.postTransaction(command)
         }
 
         val message = exception.message!!
@@ -121,10 +122,9 @@ class LedgerPostingServiceTest {
             LedgerEntry("account2", Amount(BigDecimal(100), usd), LedgerEntryType.CREDIT, "Credit entry")
         )
 
+        val command = PostTransactionCommand("sourceTxId", "Test transaction", entries)
         val exception = assertFailsWith<IllegalArgumentException> {
-            ledgerPostingService.createAndPostTransaction(sourceTransactionId = "sourceTxId",
-                description = "Test transaction",
-                entries = entries)
+            ledgerPostingService.postTransaction(command)
         }
 
         assertEquals("All entries in a transaction must have the same asset. Found mixed assets.", exception.message)
