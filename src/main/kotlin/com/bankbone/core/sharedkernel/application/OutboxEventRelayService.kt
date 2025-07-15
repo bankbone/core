@@ -1,48 +1,69 @@
 package com.bankbone.core.sharedkernel.application
 
+import com.bankbone.core.sharedkernel.domain.DomainEvent
+import com.bankbone.core.sharedkernel.domain.OutboxEvent
+import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
 import com.bankbone.core.sharedkernel.ports.EventDeserializer
 import com.bankbone.core.sharedkernel.ports.DomainEventPublisher
 import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import kotlinx.coroutines.delay
+import org.slf4j.LoggerFactory
 import kotlin.math.pow
 import kotlin.random.Random
 
 private const val MAX_ATTEMPTS = 5
 private const val INITIAL_DELAY_MS = 100L
 private const val BACKOFF_FACTOR = 2.0
+private const val BATCH_SIZE = 100 // TODO: Make configurable
 
-/**
- * This service is responsible for relaying events from the outbox to the message broker.
- * In a real application, this would be triggered by a scheduled job (e.g., a cron job)
- * or a database trigger, not called directly via an API.
- */
 class OutboxEventRelayService(
     private val outboxRepository: OutboxRepository,
     private val domainEventPublisher: DomainEventPublisher,
     private val eventDeserializer: EventDeserializer
 ) {
-    suspend fun relayPendingEvents(limit: Int = 100) {
-        val pendingEvents = outboxRepository.findPendingEvents(limit)
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    suspend fun relayPendingEvents() {
+        val pendingEvents = outboxRepository.findPendingEvents(BATCH_SIZE)
         if (pendingEvents.isEmpty()) {
             return
         }
 
-        val domainEvents = pendingEvents.mapNotNull { eventDeserializer.deserialize(it) }
-        if (domainEvents.isEmpty()) {
-            // Handle cases where deserialization fails for all events
-            outboxRepository.markAsFailed(pendingEvents, "Deserialization failed for all events in the batch.", 1)
-            return
+        pendingEvents.forEach { event ->
+            processEvent(event)
         }
+    }
 
+    private suspend fun processEvent(event: OutboxEvent) {
+        try {
+            val domainEvent = eventDeserializer.deserialize(event)
+            if (domainEvent == null) {
+                markEventAsFailed(event, "Deserialization failed", 1)
+                return
+            }
+
+            publishEventWithRetries(event, domainEvent)
+
+        } catch (e: Exception) {
+            logger.error("Error processing outbox event ${event.id}", e)
+            markEventAsFailed(event, "Unexpected error: ${e.message}", 1) // Initial attempt
+        }
+    }
+
+    private suspend fun publishEventWithRetries(event: OutboxEvent, domainEvent: DomainEvent) {
         for (attempt in 1..MAX_ATTEMPTS) {
             try {
-                domainEventPublisher.publish(domainEvents)
-                outboxRepository.markAsProcessed(pendingEvents)
+                domainEventPublisher.publish(listOf(domainEvent)) // Publish individually
+                outboxRepository.markAsProcessed(listOf(event))
+                logger.info("Successfully published event ${event.id} after $attempt attempts")
                 return // Success, exit the function
+
             } catch (e: Exception) {
                 val errorMessage = e.message ?: "Unknown error during publishing"
+                logger.warn("Attempt $attempt failed for event ${event.id}: $errorMessage")
+
                 if (attempt == MAX_ATTEMPTS) {
-                    outboxRepository.markAsFailed(pendingEvents, errorMessage, attempt)
+                    markEventAsFailed(event, errorMessage, attempt)
                     return
                 }
 
@@ -51,5 +72,11 @@ class OutboxEventRelayService(
                 delay(delayTime + jitter)
             }
         }
+    }
+
+    private suspend fun markEventAsFailed(event: OutboxEvent, errorMessage: String, attempt: Int) {
+        outboxRepository.markAsFailed(listOf(event), "$errorMessage (attempt $attempt)", attempt)
+        logger.error("Event ${event.id} marked as FAILED: $errorMessage after $attempt attempts")
+        // Consider moving to a Dead Letter Queue here
     }
 }
