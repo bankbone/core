@@ -1,5 +1,6 @@
 package com.bankbone.core.sharedkernel.application
 
+import com.bankbone.core.ledger.domain.LedgerTransaction
 import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
@@ -32,10 +33,11 @@ class OutboxEventRelayServiceTest {
     @Test
     fun `should publish pending events and mark them as processed`() = runBlocking {
         // Arrange: Create a pending event in the outbox
+        val transactionId = LedgerTransaction.Id.random()
         val pendingEvent = OutboxEvent(
-            aggregateId = "tx1",
+            aggregateId = transactionId.toString(),
             eventType = "LedgerTransactionPosted",
-            payload = """{"transactionId":"tx1","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+            payload = """{"transactionId":"${transactionId.value}","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
         )
         outboxRepository.save(pendingEvent)
 
@@ -46,7 +48,7 @@ class OutboxEventRelayServiceTest {
         assertEquals(1, domainEventPublisher.publishedEvents.size)
         val publishedEvent = domainEventPublisher.publishedEvents.first()
         assertTrue(publishedEvent is LedgerTransactionPosted)
-        assertEquals("tx1", publishedEvent.transactionId)
+        assertEquals(transactionId, publishedEvent.transactionId)
         assertEquals(BigDecimal("150.50"), publishedEvent.totalAmount)
         assertEquals(Asset("BRL"), publishedEvent.asset)
 
@@ -58,10 +60,11 @@ class OutboxEventRelayServiceTest {
     fun `should retry on failure and succeed`() = runBlocking {
         // Arrange: Simulate 2 failures before success
         domainEventPublisher.setFailures(2)
+        val transactionId = LedgerTransaction.Id.random()
         val pendingEvent = OutboxEvent(
-            aggregateId = "tx1",
+            aggregateId = transactionId.toString(),
             eventType = "LedgerTransactionPosted",
-            payload = """{"transactionId":"tx1","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+            payload = """{"transactionId":"${transactionId.value}","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
         )
         outboxRepository.save(pendingEvent)
 
@@ -80,10 +83,11 @@ class OutboxEventRelayServiceTest {
     fun `should mark as FAILED after max attempts`() = runBlocking {
         // Arrange: Simulate 5 failures
         domainEventPublisher.setFailures(5)
+        val transactionId = LedgerTransaction.Id.random()
         val pendingEvent = OutboxEvent(
-            aggregateId = "tx1",
+            aggregateId = transactionId.toString(),
             eventType = "LedgerTransactionPosted",
-            payload = """{"transactionId":"tx1","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+            payload = """{"transactionId":"${transactionId.value}","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
         )
         outboxRepository.save(pendingEvent)
 

@@ -4,6 +4,7 @@ import com.bankbone.core.ledger.ports.ChartOfAccountsRepository
 import com.bankbone.core.ledger.ports.LedgerTransactionRepository
 import com.bankbone.core.ledger.ports.LedgerUnitOfWork
 import com.bankbone.core.ledger.ports.LedgerUnitOfWorkFactory
+import com.bankbone.core.ledger.domain.LedgerTransaction.Id
 import com.bankbone.core.ledger.domain.LedgerTransaction
 import com.bankbone.core.sharedkernel.infrastructure.JacksonEventSerializer
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryOutboxRepository
@@ -14,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryLedgerUnitOfWork(
     private val outboxRepository: InMemoryOutboxRepository,
     private val chartOfAccountsRepository: InMemoryChartOfAccountsRepository,
-    private val transactions: ConcurrentHashMap<String, LedgerTransaction>
+    private val transactions: ConcurrentHashMap<Id, LedgerTransaction>
 ) : LedgerUnitOfWork {
 
     private val eventSerializer = JacksonEventSerializer()
@@ -27,8 +28,8 @@ class InMemoryLedgerUnitOfWork(
         return chartOfAccountsRepository
     }
 
-    override suspend fun <R> transaction(block: suspend (uow: com.bankbone.core.sharedkernel.ports.UnitOfWork) -> R): R {
-        return block(this) // No-op for in-memory
+    override suspend fun <R> executeInTransaction(block: suspend () -> R): R {
+        return block() // For in-memory, we just execute the block. A real DB would manage transactions here.
     }
 
     override suspend fun commit() { /* No-op for in-memory */ }
@@ -40,7 +41,7 @@ class InMemoryLedgerUnitOfWorkFactory : LedgerUnitOfWorkFactory {
     // These are shared across all UoW instances to simulate a single database.
     val outboxRepository = InMemoryOutboxRepository()
     val chartOfAccountsRepository = InMemoryChartOfAccountsRepository()
-    val transactions = ConcurrentHashMap<String, LedgerTransaction>()
+    val transactions = ConcurrentHashMap<Id, LedgerTransaction>()
 
     override fun create(): LedgerUnitOfWork {
         return InMemoryLedgerUnitOfWork(outboxRepository, chartOfAccountsRepository, transactions)

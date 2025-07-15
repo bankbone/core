@@ -2,11 +2,13 @@ package com.bankbone.core.ledger.domain
 
 import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.sharedkernel.domain.AggregateRoot
+import com.bankbone.core.sharedkernel.domain.AggregateId
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.UUID
 
 data class LedgerTransaction(
-    val id: String,
+    val id: Id,
     val sourceTransactionId: String,
     val description: String,
     val entries: List<LedgerEntry>,
@@ -49,5 +51,13 @@ data class LedgerTransaction(
     private fun validateBalance() {
         val totalCredit = entries.filter { it.type == LedgerEntryType.CREDIT }.fold(BigDecimal.ZERO) { acc, entry -> acc + entry.amount.value }
         require(totalAmount == totalCredit) { "Ledger transaction is unbalanced. Debits ($totalAmount) do not equal credits ($totalCredit) for asset ${entries.first().asset}." }
+    }
+
+    // --- Co-located Value Object ---
+
+    data class Id(override val value: UUID) : AggregateId(value) {
+        companion object {
+            fun random(): Id = Id(UUID.randomUUID())
+        }
     }
 }

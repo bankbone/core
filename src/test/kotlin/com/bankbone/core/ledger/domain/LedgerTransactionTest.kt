@@ -5,7 +5,6 @@ import com.bankbone.core.sharedkernel.domain.Amount
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.util.UUID
 
 class LedgerTransactionTest {
 
@@ -21,7 +20,7 @@ class LedgerTransactionTest {
 
         assertDoesNotThrow {
             LedgerTransaction(
-                id = UUID.randomUUID().toString(),
+                id = LedgerTransaction.Id.random(),
                 sourceTransactionId = "sourceTxId",
                 description = "Valid transaction",
                 entries = entries
@@ -37,7 +36,7 @@ class LedgerTransactionTest {
         )
 
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            LedgerTransaction("id", "sourceTxId", "Unbalanced", entries)
+            LedgerTransaction(LedgerTransaction.Id.random(), "sourceTxId", "Unbalanced", entries)
         }
         assertTrue(exception.message!!.startsWith("Ledger transaction is unbalanced."))
     }
@@ -48,7 +47,7 @@ class LedgerTransactionTest {
             LedgerEntry("account1", Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT)
         )
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            LedgerTransaction("id", "sourceTxId", "Single entry", entries)
+            LedgerTransaction(LedgerTransaction.Id.random(), "sourceTxId", "Single entry", entries)
         }
         assertEquals("A balanced ledger transaction must have at least two entries.", exception.message)
     }
@@ -61,7 +60,7 @@ class LedgerTransactionTest {
         )
 
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            LedgerTransaction("id", "sourceTxId", "Mixed assets", entries)
+            LedgerTransaction(LedgerTransaction.Id.random(), "sourceTxId", "Mixed assets", entries)
         }
         assertEquals("All entries in a transaction must have the same asset. Found mixed assets.", exception.message)
     }

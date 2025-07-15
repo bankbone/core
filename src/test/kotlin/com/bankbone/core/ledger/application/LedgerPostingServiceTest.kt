@@ -63,9 +63,9 @@ class LedgerPostingServiceTest {
         // Verify that the event was saved to the outbox
         assertEquals(1, uowFactory.outboxRepository.events.size)
         val outboxEvent = uowFactory.outboxRepository.events.values.first()
-        assertEquals(createdTransaction.id, outboxEvent.aggregateId)
+        assertEquals(createdTransaction.id.toString(), outboxEvent.aggregateId)
         assertEquals("LedgerTransactionPosted", outboxEvent.eventType)
-        assertTrue(outboxEvent.payload.contains(""""transactionId":"${createdTransaction.id}""""))
+        assertTrue(outboxEvent.payload.contains(""""transactionId":"${createdTransaction.id.value}""""))
         assertTrue(outboxEvent.payload.contains(""""totalAmount":100"""))
     }
 
