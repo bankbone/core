@@ -5,7 +5,9 @@ import com.bankbone.core.ledger.domain.Account
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
+import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
+import com.bankbone.core.sharedkernel.infrastructure.KotlinxEventDeserializer
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
 import kotlinx.coroutines.runBlocking
@@ -65,8 +67,16 @@ class LedgerPostingServiceTest {
         val outboxEvent = uowFactory.outboxRepository.events.values.first()
         assertEquals(createdTransaction.id.toString(), outboxEvent.aggregateId)
         assertEquals("LedgerTransactionPosted", outboxEvent.eventType)
-        assertTrue(outboxEvent.payload.contains(""""transactionId":"${createdTransaction.id.value}""""))
-        assertTrue(outboxEvent.payload.contains(""""totalAmount":"100""""))
+
+        // Deserialize the payload for robust, type-safe assertions
+        val deserializer = KotlinxEventDeserializer()
+        val deserializedEvent = deserializer.deserialize(outboxEvent)
+
+        assertNotNull(deserializedEvent, "Event payload should be deserializable")
+        assertTrue(deserializedEvent is LedgerTransactionPosted, "Event should be of the correct type")
+        assertEquals(createdTransaction.id, deserializedEvent.transactionId)
+        assertEquals(BigDecimal("100"), deserializedEvent.totalAmount)
+        assertEquals(brl, deserializedEvent.asset)
     }
 
     @Test
