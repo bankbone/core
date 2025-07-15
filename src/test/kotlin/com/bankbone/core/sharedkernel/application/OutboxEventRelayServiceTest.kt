@@ -37,18 +37,7 @@ class OutboxEventRelayServiceTest {
     @Test
     fun `should publish pending events and mark them as processed`() = runBlocking {
         // Arrange: Create a pending event in the outbox
-        val transactionId = LedgerTransaction.Id.random()
-        val domainEvent = LedgerTransactionPosted(
-            transactionId = transactionId,
-            totalAmount = BigDecimal("150.50"),
-            asset = Asset("BRL"),
-            occurredAt = Instant.parse("2024-07-14T12:00:00Z")
-        )
-        val pendingEvent = OutboxEvent(
-            aggregateId = domainEvent.aggregateId.toString(),
-            eventType = domainEvent.eventType,
-            payload = eventSerializer.serialize(domainEvent)
-        )
+        val (pendingEvent, domainEvent) = createTestLedgerTransactionPostedEvent()
         outboxRepository.save(pendingEvent)
 
         // Act: Run the relay service
@@ -57,8 +46,8 @@ class OutboxEventRelayServiceTest {
         // Assert: The event was published
         assertEquals(1, domainEventPublisher.publishedEvents.size)
         val publishedEvent = domainEventPublisher.publishedEvents.first()
-        assertTrue(publishedEvent is LedgerTransactionPosted)
-        assertEquals(transactionId, publishedEvent.transactionId)
+        assertTrue(publishedEvent is LedgerTransactionPosted, "Published event should be of the correct type")
+        assertEquals(domainEvent.transactionId, publishedEvent.transactionId)
         assertEquals(BigDecimal("150.50"), publishedEvent.totalAmount)
         assertEquals(Asset("BRL"), publishedEvent.asset)
 
@@ -70,18 +59,7 @@ class OutboxEventRelayServiceTest {
     fun `should retry on failure and succeed`() = runBlocking {
         // Arrange: Simulate 2 failures before success
         domainEventPublisher.setFailures(2)
-        val transactionId = LedgerTransaction.Id.random()
-        val domainEvent = LedgerTransactionPosted(
-            transactionId = transactionId,
-            totalAmount = BigDecimal("150.50"),
-            asset = Asset("BRL"),
-            occurredAt = Instant.parse("2024-07-14T12:00:00Z")
-        )
-        val pendingEvent = OutboxEvent(
-            aggregateId = domainEvent.aggregateId.toString(),
-            eventType = domainEvent.eventType,
-            payload = eventSerializer.serialize(domainEvent)
-        )
+        val (pendingEvent, _) = createTestLedgerTransactionPostedEvent()
         outboxRepository.save(pendingEvent)
 
         // Act
@@ -99,18 +77,7 @@ class OutboxEventRelayServiceTest {
     fun `should mark as FAILED after max attempts`() = runBlocking {
         // Arrange: Simulate 5 failures
         domainEventPublisher.setFailures(5)
-        val transactionId = LedgerTransaction.Id.random()
-        val domainEvent = LedgerTransactionPosted(
-            transactionId = transactionId,
-            totalAmount = BigDecimal("150.50"),
-            asset = Asset("BRL"),
-            occurredAt = Instant.parse("2024-07-14T12:00:00Z")
-        )
-        val pendingEvent = OutboxEvent(
-            aggregateId = domainEvent.aggregateId.toString(),
-            eventType = domainEvent.eventType,
-            payload = eventSerializer.serialize(domainEvent)
-        )
+        val (pendingEvent, _) = createTestLedgerTransactionPostedEvent()
         outboxRepository.save(pendingEvent)
 
         // Act
@@ -121,5 +88,22 @@ class OutboxEventRelayServiceTest {
         assertEquals(OutboxEventStatus.FAILED, failedEvent?.status)
         assertEquals(5, failedEvent?.attemptCount)
         assertTrue(failedEvent?.lastError!!.contains("Simulated publisher failure on attempt 5"))
+    }
+
+    private fun createTestLedgerTransactionPostedEvent(): Pair<OutboxEvent, LedgerTransactionPosted> {
+        val domainEvent = LedgerTransactionPosted(
+            transactionId = LedgerTransaction.Id.random(),
+            totalAmount = BigDecimal("150.50"),
+            asset = Asset("BRL"),
+            occurredAt = Instant.parse("2024-07-14T12:00:00Z")
+        )
+
+        val outboxEvent = OutboxEvent(
+            aggregateId = domainEvent.aggregateId.toString(),
+            eventType = domainEvent.eventType,
+            payload = eventSerializer.serialize(domainEvent)
+        )
+
+        return outboxEvent to domainEvent
     }
 }

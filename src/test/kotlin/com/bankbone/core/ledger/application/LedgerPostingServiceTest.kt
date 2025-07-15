@@ -44,17 +44,7 @@ class LedgerPostingServiceTest {
 
     @Test
     fun `should create and post a balanced transaction`() = runBlocking {
-        val brl = Asset("BRL")
-        val entries = listOf(
-            LedgerEntry("account1", Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
-            LedgerEntry("account2", Amount(BigDecimal(100), brl), LedgerEntryType.CREDIT, "Credit entry")
-        )
-
-        val command = PostTransactionCommand(
-            sourceTransactionId = "sourceTxId",
-            description = "Test transaction",
-            entries = entries
-        )
+        val command = createValidPostTransactionCommand()
         val createdTransaction = ledgerPostingService.postTransaction(command)
 
         val savedTransaction = uowFactory.create().ledgerTransactionRepository().findById(createdTransaction.id)
@@ -76,7 +66,7 @@ class LedgerPostingServiceTest {
         assertTrue(deserializedEvent is LedgerTransactionPosted, "Event should be of the correct type")
         assertEquals(createdTransaction.id, deserializedEvent.transactionId)
         assertEquals(BigDecimal("100"), deserializedEvent.totalAmount)
-        assertEquals(brl, deserializedEvent.asset)
+        assertEquals(Asset("BRL"), deserializedEvent.asset)
     }
 
     @Test
@@ -87,7 +77,7 @@ class LedgerPostingServiceTest {
             LedgerEntry("account2", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")
         )
 
-        val command = PostTransactionCommand("sourceTxId", "Test transaction", entries)
+        val command = createValidPostTransactionCommand(entries = entries)
         val exception = assertFailsWith<IllegalArgumentException> {
             ledgerPostingService.postTransaction(command)
         }
@@ -104,7 +94,7 @@ class LedgerPostingServiceTest {
             LedgerEntry("account4", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")  // account4 does not exist
         )
 
-        val command = PostTransactionCommand("sourceTxId", "Test transaction", entries)
+        val command = createValidPostTransactionCommand(entries = entries)
         val exception = assertFailsWith<IllegalArgumentException> {
             ledgerPostingService.postTransaction(command)
         }
@@ -125,11 +115,26 @@ class LedgerPostingServiceTest {
             LedgerEntry("account2", Amount(BigDecimal(100), usd), LedgerEntryType.CREDIT, "Credit entry")
         )
 
-        val command = PostTransactionCommand("sourceTxId", "Test transaction", entries)
+        val command = createValidPostTransactionCommand(entries = entries)
         val exception = assertFailsWith<IllegalArgumentException> {
             ledgerPostingService.postTransaction(command)
         }
 
         assertEquals("All entries in a transaction must have the same asset. Found mixed assets.", exception.message)
+    }
+
+    private fun createValidPostTransactionCommand(
+        sourceTransactionId: String = "sourceTxId",
+        description: String = "Test transaction",
+        entries: List<LedgerEntry> = listOf(
+            LedgerEntry("account1", Amount(BigDecimal(100), Asset("BRL")), LedgerEntryType.DEBIT, "Debit entry"),
+            LedgerEntry("account2", Amount(BigDecimal(100), Asset("BRL")), LedgerEntryType.CREDIT, "Credit entry")
+        )
+    ): PostTransactionCommand {
+        return PostTransactionCommand(
+            sourceTransactionId = sourceTransactionId,
+            description = description,
+            entries = entries
+        )
     }
 }
