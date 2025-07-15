@@ -1,11 +1,13 @@
 package com.bankbone.core.ledger.domain
 
 import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
-import com.bankbone.core.sharedkernel.domain.AggregateRoot
+import com.bankbone.core.ledger.domain.serializers.LedgerTransactionIdSerializer
 import com.bankbone.core.sharedkernel.domain.AggregateId
+import com.bankbone.core.sharedkernel.domain.AggregateRoot
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
+import kotlinx.serialization.Serializable
 
 data class LedgerTransaction(
     val id: Id,
@@ -55,6 +57,7 @@ data class LedgerTransaction(
 
     // --- Co-located Value Object ---
 
+    @Serializable(with = LedgerTransactionIdSerializer::class)
     data class Id(override val value: UUID) : AggregateId(value) {
         companion object {
             fun random(): Id = Id(UUID.randomUUID())

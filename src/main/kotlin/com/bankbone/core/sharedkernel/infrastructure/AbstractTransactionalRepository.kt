@@ -20,7 +20,7 @@ abstract class AbstractTransactionalRepository<T : AggregateRoot, ID>(
         val aggregateId = getAggregateId(aggregate)
         aggregate.domainEvents().forEach { domainEvent ->
             val payload = eventSerializer.serialize(domainEvent)
-            val outboxEvent = OutboxEvent(aggregateId = aggregateId.toString(), eventType = domainEvent.javaClass.simpleName, payload = payload)
+            val outboxEvent = OutboxEvent(aggregateId = aggregateId.toString(), eventType = domainEvent.eventType, payload = payload)
             outboxRepository.save(outboxEvent)
         }
         aggregate.clearEvents()

@@ -5,7 +5,7 @@ import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
-import com.bankbone.core.sharedkernel.infrastructure.JacksonEventDeserializer
+import com.bankbone.core.sharedkernel.infrastructure.KotlinxEventDeserializer
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryDomainEventPublisher
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryOutboxRepository
 import kotlinx.coroutines.runBlocking
@@ -19,14 +19,14 @@ class OutboxEventRelayServiceTest {
 
     private lateinit var outboxRepository: InMemoryOutboxRepository
     private lateinit var domainEventPublisher: InMemoryDomainEventPublisher
-    private lateinit var eventDeserializer: JacksonEventDeserializer
+    private lateinit var eventDeserializer: KotlinxEventDeserializer
     private lateinit var relayService: OutboxEventRelayService
 
     @BeforeEach
     fun setUp() {
         outboxRepository = InMemoryOutboxRepository()
         domainEventPublisher = InMemoryDomainEventPublisher()
-        eventDeserializer = JacksonEventDeserializer()
+        eventDeserializer = KotlinxEventDeserializer()
         relayService = OutboxEventRelayService(outboxRepository, domainEventPublisher, eventDeserializer)
     }
 
@@ -37,7 +37,7 @@ class OutboxEventRelayServiceTest {
         val pendingEvent = OutboxEvent(
             aggregateId = transactionId.toString(),
             eventType = "LedgerTransactionPosted",
-            payload = """{"transactionId":"${transactionId.value}","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+            payload = """{"type":"LedgerTransactionPosted","transactionId":"${transactionId.value}","totalAmount":"150.50","asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
         )
         outboxRepository.save(pendingEvent)
 
@@ -64,7 +64,7 @@ class OutboxEventRelayServiceTest {
         val pendingEvent = OutboxEvent(
             aggregateId = transactionId.toString(),
             eventType = "LedgerTransactionPosted",
-            payload = """{"transactionId":"${transactionId.value}","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+            payload = """{"type":"LedgerTransactionPosted","transactionId":"${transactionId.value}","totalAmount":"150.50","asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
         )
         outboxRepository.save(pendingEvent)
 
@@ -87,7 +87,7 @@ class OutboxEventRelayServiceTest {
         val pendingEvent = OutboxEvent(
             aggregateId = transactionId.toString(),
             eventType = "LedgerTransactionPosted",
-            payload = """{"transactionId":"${transactionId.value}","totalAmount":150.50,"asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
+            payload = """{"type":"LedgerTransactionPosted","transactionId":"${transactionId.value}","totalAmount":"150.50","asset":{"code":"BRL"},"occurredAt":"2024-07-14T12:00:00Z"}"""
         )
         outboxRepository.save(pendingEvent)
 

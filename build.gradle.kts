@@ -3,6 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
+    kotlin("plugin.serialization") version "1.9.23" // Match your Kotlin version
 }
 
 group = "com.bankbone"
@@ -21,11 +22,9 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.config.yaml)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
-    // Jackson for JSON Serialization/Deserialization
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.1")
-
+    //
     // Import the JUnit 5 BOM to manage and align all JUnit dependency versions.
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation(libs.ktor.server.test.host)

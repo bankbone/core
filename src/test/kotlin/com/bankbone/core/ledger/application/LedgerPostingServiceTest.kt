@@ -66,7 +66,7 @@ class LedgerPostingServiceTest {
         assertEquals(createdTransaction.id.toString(), outboxEvent.aggregateId)
         assertEquals("LedgerTransactionPosted", outboxEvent.eventType)
         assertTrue(outboxEvent.payload.contains(""""transactionId":"${createdTransaction.id.value}""""))
-        assertTrue(outboxEvent.payload.contains(""""totalAmount":100"""))
+        assertTrue(outboxEvent.payload.contains(""""totalAmount":"100""""))
     }
 
     @Test
