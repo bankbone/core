@@ -1,4 +1,4 @@
-package com.bankbone.core.sharedkernel.infrastructure
+package com.bankbone.core.sharedkernel.infrastructure.serialization
 
 import com.bankbone.core.sharedkernel.domain.AggregateId
 import kotlinx.serialization.KSerializer

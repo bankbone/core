@@ -5,8 +5,8 @@ import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
-import com.bankbone.core.sharedkernel.infrastructure.KotlinxEventDeserializer
-import com.bankbone.core.sharedkernel.infrastructure.KotlinxEventSerializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventDeserializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventSerializer
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryDomainEventPublisher
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryOutboxRepository
 import kotlinx.coroutines.runBlocking

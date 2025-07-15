@@ -1,4 +1,4 @@
-package com.bankbone.core.sharedkernel.infrastructure
+package com.bankbone.core.sharedkernel.infrastructure.serialization
 
 import java.math.BigDecimal
 import kotlinx.serialization.KSerializer

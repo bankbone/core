@@ -1,4 +1,4 @@
-package com.bankbone.core.sharedkernel.infrastructure
+package com.bankbone.core.sharedkernel.infrastructure.serialization
 
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test

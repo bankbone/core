@@ -7,7 +7,7 @@ import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
 import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
-import com.bankbone.core.sharedkernel.infrastructure.KotlinxEventDeserializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventDeserializer
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
 import kotlinx.coroutines.runBlocking

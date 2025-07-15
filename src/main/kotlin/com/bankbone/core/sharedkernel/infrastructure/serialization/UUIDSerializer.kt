@@ -1,4 +1,4 @@
-package com.bankbone.core.sharedkernel.infrastructure
+package com.bankbone.core.sharedkernel.infrastructure.serialization
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

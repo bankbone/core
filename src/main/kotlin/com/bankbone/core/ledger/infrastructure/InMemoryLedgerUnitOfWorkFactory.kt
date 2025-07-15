@@ -4,7 +4,7 @@ import com.bankbone.core.ledger.domain.LedgerTransaction
 import com.bankbone.core.ledger.ports.LedgerUnitOfWork
 import com.bankbone.core.ledger.ports.LedgerUnitOfWorkFactory
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryOutboxRepository
-import com.bankbone.core.sharedkernel.infrastructure.KotlinxEventSerializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventSerializer
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryLedgerUnitOfWorkFactory : LedgerUnitOfWorkFactory {

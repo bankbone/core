@@ -4,8 +4,8 @@ import com.bankbone.core.ledger.domain.LedgerTransaction
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.DomainEvent
 import com.bankbone.core.ledger.domain.serializers.LedgerTransactionIdSerializer
-import com.bankbone.core.sharedkernel.infrastructure.BigDecimalSerializer
-import com.bankbone.core.sharedkernel.infrastructure.InstantSerializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.BigDecimalSerializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.InstantSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

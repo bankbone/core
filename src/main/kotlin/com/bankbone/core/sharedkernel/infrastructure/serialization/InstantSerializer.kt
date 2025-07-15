@@ -1,4 +1,4 @@
-package com.bankbone.core.sharedkernel.infrastructure
+package com.bankbone.core.sharedkernel.infrastructure.serialization
 
 import java.time.Instant
 import kotlinx.serialization.KSerializer

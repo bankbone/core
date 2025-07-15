@@ -28,6 +28,8 @@ dependencies {
     // Import the JUnit 5 BOM to manage and align all JUnit dependency versions.
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation(libs.ktor.server.test.host)
+    // Add the JUnit 5 engine for test execution
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     // Use the kotlin-test-junit5 adapter for JUnit 5 to match `useJUnitPlatform()`.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
