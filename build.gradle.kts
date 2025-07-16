@@ -32,6 +32,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     // Use the kotlin-test-junit5 adapter for JUnit 5 to match `useJUnitPlatform()`.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    implementation(libs.koin.core)
 
 }
 
