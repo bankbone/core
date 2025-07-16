@@ -10,12 +10,14 @@ import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
 import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventDeserializer
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
+import com.bankbone.core.sharedkernel.domain.IdempotencyKey
+import com.bankbone.core.sharedkernel.infrastructure.InMemoryIdempotencyStore
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.*
 import java.math.BigDecimal
-
+import java.util.UUID
 class LedgerPostingServiceTest {
 
     private lateinit var uowFactory: InMemoryLedgerUnitOfWorkFactory
@@ -26,7 +28,8 @@ class LedgerPostingServiceTest {
     fun setUp() {
         uowFactory = InMemoryLedgerUnitOfWorkFactory()
         validator = PostTransactionCommandValidator()
-        ledgerPostingService = LedgerPostingService(uowFactory, validator)
+        val idempotencyStore = InMemoryIdempotencyStore()
+        ledgerPostingService = LedgerPostingService(uowFactory, validator, idempotencyStore)
 
         val brl = Asset("BRL")
 
@@ -121,6 +124,25 @@ class LedgerPostingServiceTest {
         }
 
         assertEquals("All entries in a transaction must have the same asset. Found mixed assets.", exception.message)
+    }
+
+    @Test
+    fun `should reject duplicate transaction with the same idempotency key`() = runBlocking {
+        val command = createValidPostTransactionCommand()
+        val key = IdempotencyKey()
+        command.idempotencyKey = key
+
+        // Post the transaction for the first time
+        ledgerPostingService.postTransaction(command)
+
+        // Attempt to post the same transaction again
+        val duplicateCommand = createValidPostTransactionCommand()
+        duplicateCommand.idempotencyKey = key
+
+        // Assert that the duplicate transaction is rejected (throws an exception)
+        assertFailsWith<IllegalStateException> {
+            ledgerPostingService.postTransaction(duplicateCommand)
+        }
     }
 
     private fun createValidPostTransactionCommand(
