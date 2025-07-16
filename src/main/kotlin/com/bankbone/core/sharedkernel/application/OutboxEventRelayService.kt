@@ -4,6 +4,8 @@ import com.bankbone.core.sharedkernel.domain.DomainEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
 import com.bankbone.core.sharedkernel.ports.EventDeserializer
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import com.bankbone.core.sharedkernel.ports.DomainEventPublisher
 import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import kotlinx.coroutines.delay
@@ -29,8 +31,10 @@ class OutboxEventRelayService(
             return
         }
 
-        pendingEvents.forEach { event ->
-            processEvent(event)
+        coroutineScope {
+            pendingEvents.forEach { event ->
+                launch { processEvent(event) }
+            }
         }
     }
 
