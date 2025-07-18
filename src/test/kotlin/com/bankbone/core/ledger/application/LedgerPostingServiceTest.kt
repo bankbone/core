@@ -139,11 +139,15 @@ class LedgerPostingServiceTest {
         val duplicateCommand = createValidPostTransactionCommand()
         duplicateCommand.idempotencyKey = key
 
-        // Assert that the duplicate transaction is rejected (throws an exception)
-        assertFailsWith<IllegalStateException> {
+        // Assert that the duplicate transaction is rejected (throws an exception) - modified for test runner compatibility
+        try {
             ledgerPostingService.postTransaction(duplicateCommand)
+            fail("Expected IllegalStateException was not thrown")
+        } catch (e: IllegalStateException) {
+            // Expected exception
         }
     }
+
 
     private fun createValidPostTransactionCommand(
         sourceTransactionId: String = "sourceTxId",
