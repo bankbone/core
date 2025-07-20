@@ -127,24 +127,26 @@ class LedgerPostingServiceTest {
     }
 
     @Test
-    fun `should reject duplicate transaction with the same idempotency key`() = runBlocking {
-        val command = createValidPostTransactionCommand()
-        val key = IdempotencyKey()
-        command.idempotencyKey = key
+    fun `should reject duplicate transaction with the same idempotency key`() {
+        runBlocking {
+            val command = createValidPostTransactionCommand()
+            val key = IdempotencyKey()
+            command.idempotencyKey = key
 
-        // Post the transaction for the first time
-        ledgerPostingService.postTransaction(command)
+            // Post the transaction for the first time
+            ledgerPostingService.postTransaction(command)
 
-        // Attempt to post the same transaction again
-        val duplicateCommand = createValidPostTransactionCommand()
-        duplicateCommand.idempotencyKey = key
+            // Attempt to post the same transaction again
+            val duplicateCommand = createValidPostTransactionCommand()
+            duplicateCommand.idempotencyKey = key
 
-        // Assert that the duplicate transaction is rejected (throws an exception) - modified for test runner compatibility
-        try {
-            ledgerPostingService.postTransaction(duplicateCommand)
-            fail("Expected IllegalStateException was not thrown")
-        } catch (e: IllegalStateException) {
-            // Expected exception
+            // Assert that the duplicate transaction is rejected (throws an exception) - modified for test runner compatibility
+            try {
+                ledgerPostingService.postTransaction(duplicateCommand)
+                fail("Expected IllegalStateException was not thrown")
+            } catch (e: IllegalStateException) {
+                // Expected exception
+            }
         }
     }
 
