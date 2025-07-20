@@ -12,6 +12,7 @@ import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
 import com.bankbone.core.sharedkernel.domain.IdempotencyKey
 import com.bankbone.core.sharedkernel.infrastructure.InMemoryIdempotencyStore
+import com.bankbone.core.sharedkernel.ports.IdempotencyStore
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,13 +23,14 @@ class LedgerPostingServiceTest {
 
     private lateinit var uowFactory: InMemoryLedgerUnitOfWorkFactory
     private lateinit var validator: PostTransactionCommandValidator
+    private lateinit var idempotencyStore: IdempotencyStore
     private lateinit var ledgerPostingService: LedgerPostingService
 
     @BeforeEach
     fun setUp() {
         uowFactory = InMemoryLedgerUnitOfWorkFactory()
         validator = PostTransactionCommandValidator()
-        val idempotencyStore = InMemoryIdempotencyStore()
+        idempotencyStore = InMemoryIdempotencyStore()
         ledgerPostingService = LedgerPostingService(uowFactory, validator, idempotencyStore)
 
         val brl = Asset("BRL")
@@ -127,26 +129,33 @@ class LedgerPostingServiceTest {
     }
 
     @Test
-    fun `should reject duplicate transaction with the same idempotency key`() {
+    fun `should return same result for duplicate transaction with same idempotency key`() {
         runBlocking {
-            val command = createValidPostTransactionCommand()
             val key = IdempotencyKey()
-            command.idempotencyKey = key
+            val command = createValidPostTransactionCommand().apply {
+                idempotencyKey = key
+            }
 
             // Post the transaction for the first time
-            ledgerPostingService.postTransaction(command)
+            val firstResult = ledgerPostingService.postTransaction(command)
+            assertNotNull(firstResult)
 
-            // Attempt to post the same transaction again
-            val duplicateCommand = createValidPostTransactionCommand()
-            duplicateCommand.idempotencyKey = key
+            // Verify one transaction was created
+            assertEquals(1, uowFactory.outboxRepository.events.size)
 
-            // Assert that the duplicate transaction is rejected (throws an exception) - modified for test runner compatibility
-            try {
-                ledgerPostingService.postTransaction(duplicateCommand)
-                fail("Expected IllegalStateException was not thrown")
-            } catch (e: IllegalStateException) {
-                // Expected exception
+            // Attempt to post the same transaction again with the same key
+            // Use a different description to prove the operation is not re-executed
+            val duplicateCommand = createValidPostTransactionCommand(description = "Different description").apply {
+                idempotencyKey = key
             }
+            val secondResult = ledgerPostingService.postTransaction(duplicateCommand)
+
+            // Assert that the second result is the same as the first one
+            assertEquals(firstResult.id, secondResult.id)
+            assertEquals(firstResult.description, secondResult.description) // Should be the original description
+
+            // Verify that no new transaction was created
+            assertEquals(1, uowFactory.outboxRepository.events.size)
         }
     }
 
