@@ -93,3 +93,4 @@ When technical debt is identified or incurred:
 * **Clarity:** Use precise language and avoid ambiguity.
 * **Codeblocks:** Use code snippets judiciously to illustrate key points or changes. Ensure snippets are self-explanatory and relevant.
 * **Avoid Reaffirmation:** Respond directly to requests without unnecessary introductory phrases.
+* **Incremental Changes:** For large refactorings or feature implementations that touch multiple files, break the work into smaller, logical, and incremental steps. Present one step at a time and wait for user confirmation before proceeding. This ensures responses remain a manageable size and allows for a more interactive and reviewable development process. Respect known limits of the Language Model you're using.
