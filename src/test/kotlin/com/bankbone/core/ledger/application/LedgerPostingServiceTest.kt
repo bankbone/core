@@ -8,31 +8,35 @@ import com.bankbone.core.ledger.domain.LedgerEntryType
 import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
 import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventDeserializer
+import com.bankbone.core.sharedkernel.di.applicationModule
+import com.bankbone.core.sharedkernel.di.sharedKernelModule
+import com.bankbone.core.sharedkernel.di.testingPersistenceModule
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.Amount
 import com.bankbone.core.sharedkernel.domain.IdempotencyKey
-import com.bankbone.core.sharedkernel.infrastructure.InMemoryIdempotencyStore
-import com.bankbone.core.sharedkernel.ports.IdempotencyStore
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
+import org.koin.test.KoinTest
+import org.koin.test.inject
+import org.koin.test.junit5.KoinTestExtension
 import kotlin.test.*
 import java.math.BigDecimal
-import java.util.UUID
-class LedgerPostingServiceTest {
+class LedgerPostingServiceTest : KoinTest {
 
-    private lateinit var uowFactory: InMemoryLedgerUnitOfWorkFactory
-    private lateinit var validator: PostTransactionCommandValidator
-    private lateinit var idempotencyStore: IdempotencyStore
-    private lateinit var ledgerPostingService: LedgerPostingService
+    // Inject dependencies from the Koin container configured for testing
+    private val ledgerPostingService: LedgerPostingService by inject()
+    private val uowFactory: InMemoryLedgerUnitOfWorkFactory by inject() // Injected for test inspection
+
+    @JvmField
+    @RegisterExtension
+    val koinTestExtension = KoinTestExtension.create {
+        modules(sharedKernelModule, applicationModule, testingPersistenceModule)
+    }
 
     @BeforeEach
     fun setUp() {
-        uowFactory = InMemoryLedgerUnitOfWorkFactory()
-        validator = PostTransactionCommandValidator()
-        idempotencyStore = InMemoryIdempotencyStore()
-        ledgerPostingService = LedgerPostingService(uowFactory, validator, idempotencyStore)
-
         val brl = Asset("BRL")
 
         // Add accounts to the Chart of Accounts

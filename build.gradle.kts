@@ -30,8 +30,11 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
     // Add the JUnit 5 engine for test execution
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    // Koin for testing
+    testImplementation(libs.findLibrary("koin-test").get())
+    testImplementation(libs.findLibrary("koin-test-junit5").get())
     // Use the kotlin-test-junit5 adapter for JUnit 5 to match `useJUnitPlatform()`.
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation(kotlin("test"))
     implementation(libs.koin.core)
 
 }
