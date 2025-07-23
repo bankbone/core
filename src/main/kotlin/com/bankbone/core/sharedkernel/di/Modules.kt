@@ -10,6 +10,7 @@ import com.bankbone.core.sharedkernel.infrastructure.serialization.KotlinxEventS
 import com.bankbone.core.sharedkernel.ports.EventDeserializer
 import com.bankbone.core.sharedkernel.ports.EventSerializer
 import com.bankbone.core.sharedkernel.ports.IdempotencyStore
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
@@ -53,6 +54,10 @@ val productionPersistenceModule = module {
  * This module provides in-memory or fake implementations for fast and isolated tests.
  */
 val testingPersistenceModule = module {
-    single<LedgerUnitOfWorkFactory> { InMemoryLedgerUnitOfWorkFactory() }
+    // We define the concrete InMemoryLedgerUnitOfWorkFactory as a singleton
+    // and also bind it to the LedgerUnitOfWorkFactory interface.
+    // This allows the application to depend on the interface, while tests
+    // can inject the concrete class to inspect its state.
+    single { InMemoryLedgerUnitOfWorkFactory() } bind LedgerUnitOfWorkFactory::class
     single<IdempotencyStore> { InMemoryIdempotencyStore() }
 }
