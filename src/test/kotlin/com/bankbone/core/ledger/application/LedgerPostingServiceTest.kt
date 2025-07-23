@@ -2,6 +2,7 @@ package com.bankbone.core.ledger.application
 
 import com.bankbone.core.ledger.application.commands.PostTransactionCommand
 import com.bankbone.core.ledger.domain.Account
+import com.bankbone.core.ledger.domain.Account.Id
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
@@ -29,6 +30,9 @@ class LedgerPostingServiceTest : KoinTest {
     private val ledgerPostingService: LedgerPostingService by inject()
     private val uowFactory: InMemoryLedgerUnitOfWorkFactory by inject() // Injected for test inspection
 
+    private val account1Id = Id.random()
+    private val account2Id = Id.random()
+
     @JvmField
     @RegisterExtension
     val koinTestExtension = KoinTestExtension.create {
@@ -43,16 +47,16 @@ class LedgerPostingServiceTest : KoinTest {
         runBlocking {
             val chartOfAccountsRepository = uowFactory.chartOfAccountsRepository
             chartOfAccountsRepository.add(
-                Account(id = "account1", name = "Cash Account", type = AccountType.ASSET, asset = brl)
+                Account(id = account1Id, name = "Cash Account", type = AccountType.ASSET, asset = brl)
             )
             chartOfAccountsRepository.add(
-                Account(id = "account2", name = "Revenue Account", type = AccountType.REVENUE, asset = brl)
+                Account(id = account2Id, name = "Revenue Account", type = AccountType.REVENUE, asset = brl)
             )
         }
     }
 
     @Test
-    fun `should create and post a balanced transaction`() = runBlocking {
+    fun `should create and post a balanced transaction`() { runBlocking {
         val command = createValidPostTransactionCommand()
         val createdTransaction = ledgerPostingService.postTransaction(command)
 
@@ -76,14 +80,14 @@ class LedgerPostingServiceTest : KoinTest {
         assertEquals(createdTransaction.id, deserializedEvent.transactionId)
         assertEquals(BigDecimal("100"), deserializedEvent.totalAmount)
         assertEquals(Asset("BRL"), deserializedEvent.asset)
-    }
+    } }
 
     @Test
-    fun `should throw error for unbalanced transaction`() = runBlocking {
+    fun `should throw error for unbalanced transaction`() { runBlocking {
         val brl = Asset("BRL")
         val entries = listOf(
-            LedgerEntry("account1", Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
-            LedgerEntry("account2", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")
+            LedgerEntry(account1Id, Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
+            LedgerEntry(account2Id, Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")
         )
 
         val command = createValidPostTransactionCommand(entries = entries)
@@ -92,15 +96,17 @@ class LedgerPostingServiceTest : KoinTest {
         }
 
         assertTrue(exception.message!!.startsWith("Ledger transaction is unbalanced."))
-    }
+    } }
 
     @Test
-    fun `should throw error for non-existent accounts`() = runBlocking {
+    fun `should throw error for non-existent accounts`() { runBlocking {
         val brl = Asset("BRL")
+        val nonExistentId1 = Id.random()
+        val nonExistentId2 = Id.random()
         val entries = listOf(
-            LedgerEntry("account1", Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
-            LedgerEntry("account3", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry"), // account3 does not exist
-            LedgerEntry("account4", Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")  // account4 does not exist
+            LedgerEntry(account1Id, Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
+            LedgerEntry(nonExistentId1, Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry"), // nonExistentId1 does not exist
+            LedgerEntry(nonExistentId2, Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry")  // nonExistentId2 does not exist
         )
 
         val command = createValidPostTransactionCommand(entries = entries)
@@ -110,18 +116,18 @@ class LedgerPostingServiceTest : KoinTest {
 
         val message = exception.message!!
         assertTrue(message.startsWith("Accounts do not exist or are not active in the Chart of Accounts:"))
-        assertTrue(message.contains("account3"))
-        assertTrue(message.contains("account4"))
-    }
+        assertTrue(message.contains(nonExistentId1.toString()))
+        assertTrue(message.contains(nonExistentId2.toString()))
+    } }
 
     @Test
-    fun `should throw error for transaction with mixed assets`() = runBlocking {
+    fun `should throw error for transaction with mixed assets`() { runBlocking {
         val brl = Asset("BRL")
         val usd = Asset("USD")
 
         val entries = listOf(
-            LedgerEntry("account1", Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
-            LedgerEntry("account2", Amount(BigDecimal(100), usd), LedgerEntryType.CREDIT, "Credit entry")
+            LedgerEntry(account1Id, Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
+            LedgerEntry(account2Id, Amount(BigDecimal(100), usd), LedgerEntryType.CREDIT, "Credit entry")
         )
 
         val command = createValidPostTransactionCommand(entries = entries)
@@ -130,7 +136,7 @@ class LedgerPostingServiceTest : KoinTest {
         }
 
         assertEquals("All entries in a transaction must have the same asset. Found mixed assets.", exception.message)
-    }
+    } }
 
     @Test
     fun `should return same result for duplicate transaction with same idempotency key`() {
@@ -168,8 +174,8 @@ class LedgerPostingServiceTest : KoinTest {
         sourceTransactionId: String = "sourceTxId",
         description: String = "Test transaction",
         entries: List<LedgerEntry> = listOf(
-            LedgerEntry("account1", Amount(BigDecimal(100), Asset("BRL")), LedgerEntryType.DEBIT, "Debit entry"),
-            LedgerEntry("account2", Amount(BigDecimal(100), Asset("BRL")), LedgerEntryType.CREDIT, "Credit entry")
+            LedgerEntry(account1Id, Amount(BigDecimal(100), Asset("BRL")), LedgerEntryType.DEBIT, "Debit entry"),
+            LedgerEntry(account2Id, Amount(BigDecimal(100), Asset("BRL")), LedgerEntryType.CREDIT, "Credit entry")
         )
     ): PostTransactionCommand {
         return PostTransactionCommand(

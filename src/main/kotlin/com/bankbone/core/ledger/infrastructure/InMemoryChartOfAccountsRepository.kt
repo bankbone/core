@@ -1,18 +1,19 @@
 package com.bankbone.core.ledger.infrastructure
 
 import com.bankbone.core.ledger.domain.Account
+import com.bankbone.core.ledger.domain.Account.Id
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.ledger.ports.ChartOfAccountsRepository
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryChartOfAccountsRepository : ChartOfAccountsRepository {
-    private val accounts = ConcurrentHashMap<String, Account>()
+    private val accounts = ConcurrentHashMap<Id, Account>()
 
-    override suspend fun exists(accountId: String): Boolean {
+    override suspend fun exists(accountId: Id): Boolean {
         return accounts.containsKey(accountId) && accounts[accountId]?.isActive == true
     }
 
-    override suspend fun findById(accountId: String): Account? {
+    override suspend fun findById(accountId: Id): Account? {
         return accounts[accountId]
     }
 
@@ -21,7 +22,7 @@ class InMemoryChartOfAccountsRepository : ChartOfAccountsRepository {
     }
 
     override suspend fun add(account: Account) {
-        require(!accounts.containsKey(account.id)) { "Account with ID ${account.id} already exists" }
+        require(!accounts.containsKey(account.id)) { "Account with ID ${account.id} already exists." }
         accounts[account.id] = account
     }
 
@@ -30,7 +31,7 @@ class InMemoryChartOfAccountsRepository : ChartOfAccountsRepository {
         return accounts.values.filter { it.asset == assetVO }
     }
 
-    override suspend fun findAllByIds(accountIds: Collection<String>): List<Account> {
+    override suspend fun findAllByIds(accountIds: Collection<Id>): List<Account> {
         return accountIds.mapNotNull { accounts[it] }.filter { it.isActive }
     }
 }

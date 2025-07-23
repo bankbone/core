@@ -8,7 +8,7 @@ import java.time.Instant
 enum class LedgerEntryType { DEBIT, CREDIT }
 
 data class LedgerEntry(
-    val accountId: String,
+    val accountId: Account.Id,
     val amount: Amount,
     val type: LedgerEntryType,
     val description: String? = null,
