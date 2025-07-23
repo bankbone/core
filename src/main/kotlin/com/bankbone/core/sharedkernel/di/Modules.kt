@@ -54,10 +54,9 @@ val productionPersistenceModule = module {
  * This module provides in-memory or fake implementations for fast and isolated tests.
  */
 val testingPersistenceModule = module {
-    // We define the concrete InMemoryLedgerUnitOfWorkFactory as a singleton
-    // and also bind it to the LedgerUnitOfWorkFactory interface.
-    // This allows the application to depend on the interface, while tests
-    // can inject the concrete class to inspect its state.
+    // Define the concrete InMemoryLedgerUnitOfWorkFactory as a singleton and
+    // also bind it to the LedgerUnitOfWorkFactory interface. This allows tests
+    // to inject the concrete class while the application uses the interface.
     single { InMemoryLedgerUnitOfWorkFactory() } bind LedgerUnitOfWorkFactory::class
     single<IdempotencyStore> { InMemoryIdempotencyStore() }
 }

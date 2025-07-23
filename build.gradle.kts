@@ -31,8 +31,8 @@ dependencies {
     // Add the JUnit 5 engine for test execution
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     // Koin for testing
-    testImplementation(libs.findLibrary("koin-test").get())
-    testImplementation(libs.findLibrary("koin-test-junit5").get())
+    testImplementation(libs.koinTest)
+    testImplementation(libs.koinTestJunit5)
     // Use the kotlin-test-junit5 adapter for JUnit 5 to match `useJUnitPlatform()`.
     testImplementation(kotlin("test"))
     implementation(libs.koin.core)
@@ -41,10 +41,15 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-
     testLogging {
         showStandardStreams = true
         exceptionFormat = TestExceptionFormat.FULL
         events("passed", "skipped", "failed")
+    }
+
+    // This ensures that if the test task fails for any reason (including setup),
+    // the exception is re-thrown, which will fail the build.
+    doLast {
+        state.failure?.let { throw it }
     }
 }

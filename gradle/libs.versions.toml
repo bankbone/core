@@ -1,11 +1,14 @@
 
 [versions]
 kotlin-version = "2.1.10"
+koin-version = "3.5.6"
 ktor-version = "3.2.1"
 logback-version = "1.4.14"
 
 [libraries]
-koin-core = { module = "io.insert-koin:koin-core", version = "3.5.6" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin-version" }
+koinTest = { module = "io.insert-koin:koin-test", version.ref = "koin-version" }
+koinTestJunit5 = { module = "io.insert-koin:koin-test-junit5", version.ref = "koin-version" }
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor-version" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback-version" }
