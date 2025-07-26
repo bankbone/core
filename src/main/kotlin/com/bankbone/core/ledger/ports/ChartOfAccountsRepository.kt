@@ -7,6 +7,7 @@ interface ChartOfAccountsRepository {
     suspend fun findById(accountId: Account.Id): Account?
     suspend fun listAll(): List<Account>
     suspend fun add(account: Account)
-    suspend fun findByAsset(asset: String): List<Account> // New method to find accounts by asset type
+    suspend fun findByAsset(asset: String): List<Account>
+    suspend fun update(account: Account)
     suspend fun findAllByIds(accountIds: Collection<Account.Id>): List<Account>
 }

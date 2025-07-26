@@ -1,5 +1,6 @@
 package com.bankbone.core.sharedkernel.di
 
+import com.bankbone.core.ledger.application.ChartOfAccountsService
 import com.bankbone.core.ledger.application.LedgerPostingService
 import com.bankbone.core.ledger.application.PostTransactionCommandValidator
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
@@ -23,6 +24,12 @@ val applicationModule = module {
         LedgerPostingService(
             uowFactory = get(),
             validator = get(),
+            idempotencyStore = get()
+        )
+    }
+    single {
+        ChartOfAccountsService(
+            uowFactory = get(),
             idempotencyStore = get()
         )
     }

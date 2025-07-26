@@ -26,6 +26,11 @@ class InMemoryChartOfAccountsRepository : ChartOfAccountsRepository {
         accounts[account.id] = account
     }
 
+    override suspend fun update(account: Account) {
+        require(accounts.containsKey(account.id)) { "Cannot update account with ID ${account.id} because it does not exist." }
+        accounts[account.id] = account
+    }
+
     override suspend fun findByAsset(asset: String): List<Account> {
         val assetVO = Asset(asset)
         return accounts.values.filter { it.asset == assetVO }
@@ -33,5 +38,9 @@ class InMemoryChartOfAccountsRepository : ChartOfAccountsRepository {
 
     override suspend fun findAllByIds(accountIds: Collection<Id>): List<Account> {
         return accountIds.mapNotNull { accounts[it] }.filter { it.isActive }
+    }
+
+    fun clear() {
+        accounts.clear()
     }
 }
