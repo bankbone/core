@@ -87,10 +87,94 @@ When technical debt is identified or incurred:
 
 ## Response Style
 
+### For All Responses
 * **Conciseness:** Provide focused, to-the-point answers. Avoid lengthy explanations unless necessary for clarity or explicitly requested.
-* **Prioritization:** Address the most critical aspects or potential issues first.
-* **Actionable Guidance:** Offer clear, actionable steps or recommendations.
 * **Clarity:** Use precise language and avoid ambiguity.
 * **Codeblocks:** Use code snippets judiciously to illustrate key points or changes. Ensure snippets are self-explanatory and relevant.
-* **Avoid Reaffirmation:** Respond directly to requests without unnecessary introductory phrases.
-* **Incremental Changes:** For large refactorings or feature implementations that touch multiple files, break the work into smaller, logical, and incremental steps. Present one step at a time and wait for user confirmation before proceeding. This ensures responses remain a manageable size and allows for a more interactive and reviewable development process. Respect known limits of the Language Model you're using.
+* **Incremental Changes:** Break large changes into smaller, logical steps.
+
+### For Refactoring Suggestions
+* **Mark with 🔄 REFACTOR:** Start with this prefix to indicate refactoring suggestions
+* **Justify Impact:** Explain how the refactoring improves code quality, performance, or maintainability
+* **Technical Debt:** Explicitly mention if the refactoring addresses technical debt
+* **Risk Assessment:** Include any potential risks or breaking changes
+* **Example:**
+  ```
+  🔄 REFACTOR: Consider extracting this logic into a domain service
+  
+  **Reason:** Improves Single Responsibility and makes the code more testable.
+  **Impact:** Reduces cognitive complexity in the current class.
+  **Risk:** Low - No behavioral changes, just structural improvements.
+  ```
+
+### For Feature Development
+* **Mark with ✨ FEATURE:** Start with this prefix for new feature implementations
+* **Domain Context:** Relate to the core banking domain and bounded contexts
+* **Business Value:** Explain how the feature delivers business value
+* **DDD Alignment:** Show how it aligns with DDD principles and the ubiquitous language
+* **Example:**
+  ```
+  ✨ FEATURE: Implement Funds Transfer between accounts
+  
+  **Domain Context:** Core Banking > Transaction Management
+  **Business Value:** Enables customers to transfer funds between accounts
+  **DDD Alignment:** 
+    - Bounded Context: Account Management
+    - Aggregate: AccountAggregate
+    - Domain Events: FundsTransferInitiated, FundsTransferCompleted
+  ```
+
+### For Code Reviews
+* **Mark with 👀 REVIEW:** Start with this prefix for code review comments
+* **Be Specific:** Reference exact lines or sections
+* **Provide Context:** Explain why the change is suggested
+* **Offer Alternatives:** When possible, suggest concrete improvements
+* **Example:**
+  ```
+  👀 REVIEW: Line 42 - Currency Conversion
+  
+  Consider using the Money pattern to encapsulate amount and currency together.
+  This would prevent potential currency mismatches and provide better type safety.
+  
+  Current: `fun transfer(amount: BigDecimal, currency: String)`
+  Suggested: `fun transfer(amount: Money)`
+  ```
+
+### For Architectural Decisions
+* **Mark with 🏗️ ARCH:** Start with this prefix for architectural discussions
+* **Context First:** Explain the problem space and constraints
+* **Options Analysis:** Present multiple approaches with pros/cons
+* **Recommendation:** Provide a clear, justified recommendation
+* **Example:**
+  ```
+  🏗️ ARCH: Transaction Processing Strategy
+  
+  **Challenge:** Need to handle high-volume transaction processing with ACID guarantees
+  
+  **Options:**
+  1. Synchronous processing
+     - ✅ Simple to implement
+     - ❌ Doesn't scale well under high load
+  
+  2. Event-driven with Saga pattern
+     - ✅ Better scalability
+     - ✅ Handles long-running transactions
+     - ❌ More complex implementation
+  
+  **Recommendation:** Start with Option 1 (synchronous) for MVP, with clear path to migrate to Option 2 as transaction volume grows.
+  ```
+
+### For Security Considerations
+* **Mark with 🔒 SECURITY:** Start with this prefix for security-related suggestions
+* **Threat Model:** Identify potential threats or vulnerabilities
+* **Mitigation:** Suggest specific security controls or best practices
+* **Compliance:** Reference relevant standards (PCI-DSS, ISO 27001, etc.)
+* **Example:**
+  ```
+  🔒 SECURITY: Sensitive Data Exposure
+  
+  **Issue:** Account numbers are being logged in plaintext
+  **Risk:** High - Could lead to data leakage
+  **Mitigation:** Implement data masking for sensitive fields in logs
+  **Compliance:** Required by PCI-DSS requirement 3.3
+  ```
