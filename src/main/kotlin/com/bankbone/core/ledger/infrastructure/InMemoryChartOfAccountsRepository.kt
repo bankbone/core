@@ -19,7 +19,7 @@ class InMemoryChartOfAccountsRepository : ChartOfAccountsRepository {
     override suspend fun exists(accountId: Account.Id): Boolean = accounts.containsKey(accountId)
     override suspend fun listAll(): List<Account> = accounts.values.toList()
     override suspend fun findByAsset(asset: String): List<Account> {
-        return accounts.values.filter { it.asset.symbol == asset }
+        return accounts.values.filter { it.asset.code == asset }
     }
     override suspend fun findAllByIds(accountIds: Collection<Account.Id>): List<Account> {
         return accounts.values.filter { it.id in accountIds }

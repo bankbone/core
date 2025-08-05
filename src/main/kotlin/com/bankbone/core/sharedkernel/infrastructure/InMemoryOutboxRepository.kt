@@ -2,16 +2,21 @@ package com.bankbone.core.sharedkernel.infrastructure
 
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
-import com.bankbone.core.sharedkernel.ports.OutboxRepository
+import com.bankbone.core.sharedkernel.domain.OutboxRepository
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryOutboxRepository : OutboxRepository {
-    val events = ConcurrentHashMap<UUID, OutboxEvent>()
+    internal val events = ConcurrentHashMap<UUID, OutboxEvent>()
+    private val mutex = Mutex()
 
     override suspend fun add(event: OutboxEvent) {
-        events[event.id] = event
+        mutex.withLock {
+            events[event.id] = event
+        }
     }
 
     override suspend fun findPendingEvents(limit: Int): List<OutboxEvent> {
@@ -22,19 +27,25 @@ class InMemoryOutboxRepository : OutboxRepository {
     }
 
     override suspend fun markAsProcessed(event: OutboxEvent) {
-        events[event.id] = event.copy(
-            status = OutboxEventStatus.PUBLISHED,
-            attemptCount = event.attemptCount + 1,
-            lastAttemptAt = Instant.now()
-        )
+        mutex.withLock {
+            val currentEvent = events[event.id] ?: event
+            events[event.id] = currentEvent.copy(
+                status = OutboxEventStatus.PUBLISHED,
+                attemptCount = currentEvent.attemptCount + 1,
+                lastAttemptAt = Instant.now()
+            )
+        }
     }
 
     override suspend fun markAsFailed(event: OutboxEvent, error: String) {
-        events[event.id] = event.copy(
-            status = OutboxEventStatus.FAILED,
-            attemptCount = event.attemptCount + 1,
-            lastAttemptAt = Instant.now(),
-            lastError = error
-        )
+        mutex.withLock {
+            val currentEvent = events[event.id] ?: event
+            events[event.id] = currentEvent.copy(
+                status = OutboxEventStatus.FAILED,
+                attemptCount = currentEvent.attemptCount + 1,
+                lastAttemptAt = Instant.now(),
+                lastError = error
+            )
+        }
     }
 }
