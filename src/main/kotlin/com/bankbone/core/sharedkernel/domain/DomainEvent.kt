@@ -5,6 +5,7 @@ import java.util.UUID
 
 interface DomainEvent {
     val aggregateId: UUID
-    val eventType: String
     val occurredAt: Instant
+    val eventType: String
+        get() = this::class.simpleName!!
 }

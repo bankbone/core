@@ -1,10 +1,22 @@
-package com.bankbone.core.sharedkernel.ports
+package com.bankbone.core.sharedkernel.domain
 
-import com.bankbone.core.sharedkernel.domain.OutboxEvent
+import java.time.Instant
+import java.util.UUID
 
-interface OutboxRepository {
-    suspend fun save(event: OutboxEvent)
-    suspend fun findPendingEvents(limit: Int): List<OutboxEvent>
-    suspend fun markAsProcessed(events: List<OutboxEvent>)
-    suspend fun markAsFailed(events: List<OutboxEvent>, error: String?, finalAttemptCount: Int)
+enum class OutboxEventStatus {
+    PENDING,
+    PUBLISHED,
+    FAILED
 }
+
+data class OutboxEvent(
+    val id: UUID = UUID.randomUUID(),
+    val aggregateId: String,
+    val eventType: String,
+    val payload: String,
+    val status: OutboxEventStatus = OutboxEventStatus.PENDING,
+    val attemptCount: Int = 0,
+    val lastAttemptAt: Instant? = null,
+    val lastError: String? = null,
+    val createdAt: Instant = Instant.now()
+)

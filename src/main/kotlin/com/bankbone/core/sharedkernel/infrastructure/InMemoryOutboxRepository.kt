@@ -10,27 +10,31 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryOutboxRepository : OutboxRepository {
     val events = ConcurrentHashMap<UUID, OutboxEvent>()
 
-    override suspend fun save(event: OutboxEvent) {
+    override suspend fun add(event: OutboxEvent) {
         events[event.id] = event
     }
 
     override suspend fun findPendingEvents(limit: Int): List<OutboxEvent> {
         return events.values
-            .filter { it.status == OutboxEventStatus.PENDING }
+            .filter { it.status == OutboxEventStatus.PENDING || it.status == OutboxEventStatus.FAILED }
+            .sortedBy { it.createdAt }
             .take(limit)
     }
 
-    override suspend fun markAsProcessed(events: List<OutboxEvent>) {
-        events.forEach { event ->
-            val currentEvent = this.events[event.id] ?: event
-            this.events[event.id] = currentEvent.copy(status = OutboxEventStatus.PUBLISHED, processedAt = Instant.now())
-        }
+    override suspend fun markAsProcessed(event: OutboxEvent) {
+        events[event.id] = event.copy(
+            status = OutboxEventStatus.PUBLISHED,
+            attemptCount = event.attemptCount + 1,
+            lastAttemptAt = Instant.now()
+        )
     }
 
-    override suspend fun markAsFailed(events: List<OutboxEvent>, error: String?, finalAttemptCount: Int) {
-        events.forEach { event ->
-            val currentEvent = this.events[event.id] ?: event
-            this.events[event.id] = currentEvent.copy(status = OutboxEventStatus.FAILED, lastError = error, attemptCount = finalAttemptCount)
-        }
+    override suspend fun markAsFailed(event: OutboxEvent, error: String) {
+        events[event.id] = event.copy(
+            status = OutboxEventStatus.FAILED,
+            attemptCount = event.attemptCount + 1,
+            lastAttemptAt = Instant.now(),
+            lastError = error
+        )
     }
 }
