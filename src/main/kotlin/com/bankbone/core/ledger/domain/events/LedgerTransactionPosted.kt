@@ -28,4 +28,15 @@ data class LedgerTransactionPosted(
     override val aggregateId: UUID = transactionId.value
     @Transient
     override val eventType: String = "LedgerTransactionPosted"
+
+    companion object {
+        fun from(transaction: LedgerTransaction): LedgerTransactionPosted {
+            return LedgerTransactionPosted(
+                transactionId = transaction.id,
+                totalAmount = transaction.entries.filter { it.type == com.bankbone.core.ledger.domain.LedgerEntryType.DEBIT }.sumOf { it.amount.value },
+                asset = transaction.entries.first().asset,
+                occurredAt = transaction.postedAt
+            )
+        }
+    }
 }

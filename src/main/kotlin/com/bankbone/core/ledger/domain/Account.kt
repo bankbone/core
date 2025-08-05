@@ -1,6 +1,7 @@
 package com.bankbone.core.ledger.domain
 
 import com.bankbone.core.ledger.domain.serializers.AccountIdSerializer
+import com.bankbone.core.sharedkernel.domain.AggregateRoot
 import com.bankbone.core.sharedkernel.domain.AggregateId
 import com.bankbone.core.sharedkernel.domain.Asset
 import kotlinx.serialization.Serializable
@@ -9,14 +10,14 @@ import java.util.UUID
 enum class AccountType { ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE }
 
 data class Account(
-    val id: Id,
+    override val id: Id,
     val name: String,
     val type: AccountType,
     val asset: Asset, // Represents the asset type (e.g., "BRL", "Gold", "BTC")
     val parentAccountId: Id? = null, // Supports hierarchical structure
     val isActive: Boolean = true, // Indicates if the account is active
     val metadata: Map<String, String> = emptyMap() // Additional attributes for extensibility
-) {
+) : AggregateRoot<Account.Id>() {
     init {
         require(name.isNotBlank()) { "Account name must not be blank" }
     }
@@ -27,7 +28,5 @@ data class Account(
             fun random(): Id = Id(UUID.randomUUID())
             fun fromString(id: String): Id = Id(UUID.fromString(id))
         }
-
-        override fun toString(): String = value.toString()
     }
 }

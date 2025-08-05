@@ -1,6 +1,9 @@
 package com.bankbone.core.ledger.domain.serializers
 
 import com.bankbone.core.ledger.domain.Account
-import com.bankbone.core.sharedkernel.infrastructure.serialization.AggregateIdSerializer
+import com.bankbone.core.sharedkernel.infrastructure.serialization.UuidBasedIdSerializer
 
-object AccountIdSerializer : AggregateIdSerializer<Account.Id>({ uuid -> Account.Id(uuid) })
+object AccountIdSerializer : UuidBasedIdSerializer<Account.Id>(
+    serialName = "com.bankbone.core.ledger.domain.Account.Id",
+    fromUuid = { uuid -> Account.Id(uuid) }
+)
