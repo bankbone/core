@@ -2,13 +2,12 @@ package com.bankbone.core.sharedkernel.application
 
 import com.bankbone.core.sharedkernel.domain.DomainEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
-import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
+import com.bankbone.core.sharedkernel.domain.OutboxRepository
+import com.bankbone.core.sharedkernel.ports.DomainEventPublisher
 import com.bankbone.core.sharedkernel.ports.EventDeserializer
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import com.bankbone.core.sharedkernel.ports.DomainEventPublisher
-import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import kotlin.math.pow
 import kotlin.random.Random
@@ -49,16 +48,18 @@ class OutboxEventRelayService(
             publishEventWithRetries(event, domainEvent)
 
         } catch (e: Exception) {
-            logger.error("Error processing outbox event ${event.id}", e)
-            markEventAsFailed(event, "Unexpected error: ${e.message}", 1) // Initial attempt
+            // If we get here, it means there was an unexpected error before we could start retries
+            logger.error("Unexpected error processing outbox event ${event.id}", e)
+            markEventAsFailed(event, "Unexpected error: ${e.message}", 1)
         }
     }
 
     private suspend fun publishEventWithRetries(event: OutboxEvent, domainEvent: DomainEvent) {
+        var currentEvent = event
         for (attempt in 1..MAX_ATTEMPTS) {
             try {
                 domainEventPublisher.publish(listOf(domainEvent)) // Publish individually
-                outboxRepository.markAsProcessed(listOf(event))
+                outboxRepository.markAsProcessed(currentEvent)
                 logger.info("Successfully published event ${event.id} after $attempt attempts")
                 return // Success, exit the function
 
@@ -67,9 +68,16 @@ class OutboxEventRelayService(
                 logger.warn("Attempt $attempt failed for event ${event.id}: $errorMessage")
 
                 if (attempt == MAX_ATTEMPTS) {
-                    markEventAsFailed(event, errorMessage, attempt)
+                    markEventAsFailed(currentEvent, errorMessage, attempt)
                     return
                 }
+
+                // Mark as failed for this attempt
+                markEventAsFailed(currentEvent, errorMessage, attempt)
+                
+                // Get the latest version of the event for the next attempt
+                currentEvent = outboxRepository.findPendingEvents(MAX_ATTEMPTS)
+                    .find { it.id == event.id } ?: currentEvent
 
                 val delayTime = (INITIAL_DELAY_MS * BACKOFF_FACTOR.pow(attempt - 1)).toLong()
                 val jitter = Random.nextLong(delayTime / 10) // Add up to 10% jitter
@@ -79,8 +87,9 @@ class OutboxEventRelayService(
     }
 
     private suspend fun markEventAsFailed(event: OutboxEvent, errorMessage: String, attempt: Int) {
-        outboxRepository.markAsFailed(listOf(event), "$errorMessage (attempt $attempt)", attempt)
-        logger.error("Event ${event.id} marked as FAILED: $errorMessage after $attempt attempts")
+        val finalMessage = "$errorMessage (attempt $attempt)"
+        outboxRepository.markAsFailed(event, finalMessage)
+        logger.error("Event ${event.id} marked as FAILED: $finalMessage")
         // Consider moving to a Dead Letter Queue here
     }
 }
