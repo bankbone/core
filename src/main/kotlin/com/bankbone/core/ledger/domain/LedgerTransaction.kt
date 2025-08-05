@@ -23,18 +23,21 @@ data class LedgerTransaction(
         }
     }
 
+    init {
+        require(entries.size >= 2) { "A balanced ledger transaction must have at least two entries." }
+        
+        val firstAsset = entries.firstOrNull()?.asset
+        require(!firstAsset?.code.isNullOrBlank()) { "Transaction entries must have a valid asset." }
+        require(entries.all { it.asset == firstAsset }) { "All entries in a transaction must have the same asset. Found mixed assets." }
+
+        val debits = entries.filter { it.type == LedgerEntryType.DEBIT }.sumOf { it.amount.value }
+        val credits = entries.filter { it.type == LedgerEntryType.CREDIT }.sumOf { it.amount.value }
+        require(debits == credits) { "Ledger transaction is unbalanced. Debits ($debits) do not equal credits ($credits)." }
+        require(debits > BigDecimal.ZERO) { "Transaction amount must be positive." }
+    }
+
     companion object {
         fun create(sourceTransactionId: String, description: String, entries: List<LedgerEntry>): LedgerTransaction {
-            require(entries.size >= 2) { "A transaction must have at least two entries." }
-
-            val firstAsset = entries.first().asset
-            require(entries.all { it.asset == firstAsset }) { "All entries in a transaction must have the same asset. Found mixed assets." }
-
-            val debits = entries.filter { it.type == LedgerEntryType.DEBIT }.sumOf { it.amount.value }
-            val credits = entries.filter { it.type == LedgerEntryType.CREDIT }.sumOf { it.amount.value }
-            require(debits == credits) { "Ledger transaction is unbalanced. Debits ($debits) do not equal credits ($credits)." }
-            require(debits > BigDecimal.ZERO) { "Transaction amount must be positive." }
-
             val transaction = LedgerTransaction(
                 id = Id.random(),
                 sourceTransactionId = sourceTransactionId,
