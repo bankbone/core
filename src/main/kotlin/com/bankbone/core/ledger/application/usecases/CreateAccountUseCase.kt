@@ -17,7 +17,7 @@ class CreateAccountUseCase(
 
             val parentId = command.parentAccountId?.let { Account.Id.fromString(it) }?.also {
                 if (!repo.exists(it)) {
-                    throw IllegalArgumentException("Parent account with ID $it does not exist.")
+                    throw IllegalArgumentException("Parent account with ID ${it.value} does not exist.")
                 }
             }
 

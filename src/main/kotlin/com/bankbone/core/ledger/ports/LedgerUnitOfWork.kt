@@ -1,9 +1,13 @@
 package com.bankbone.core.ledger.ports
 
-import com.bankbone.core.sharedkernel.ports.UnitOfWork
-
-// Extends the shared UoW with Ledger-specific repository factories.
-interface LedgerUnitOfWork : UnitOfWork {
-    fun ledgerTransactionRepository(): LedgerTransactionRepository
+/**
+ * Defines the contract for a Unit of Work within the Ledger bounded context.
+ * It provides access to all repositories relevant to a single transaction.
+ */
+interface LedgerUnitOfWork {
     fun chartOfAccountsRepository(): ChartOfAccountsRepository
+    fun ledgerTransactionRepository(): LedgerTransactionRepository
+
+    suspend fun commit()
+    suspend fun rollback()
 }
