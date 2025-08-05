@@ -1,0 +1,11 @@
+# Cascade configuration for bankbone-core
+# This ensures the copilot instructions are always loaded as context
+
+# Context files to load for every conversation
+context:
+  files:
+    - .github/copilot-instructions.md
+    - README.md
+    - CONTRIBUTING.md
+
+# Additional configuration can be added here as needed
