@@ -2,7 +2,7 @@ package com.bankbone.core.ledger.infrastructure
 
 import com.bankbone.core.ledger.domain.LedgerTransaction
 import com.bankbone.core.ledger.ports.LedgerTransactionRepository
-import com.bankbone.core.sharedkernel.domain.OutboxRepository
+import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import com.bankbone.core.sharedkernel.infrastructure.AbstractTransactionalRepository
 import com.bankbone.core.sharedkernel.ports.EventSerializer
 import java.util.concurrent.ConcurrentHashMap

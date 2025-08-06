@@ -3,7 +3,7 @@ package com.bankbone.core.sharedkernel.infrastructure
 import com.bankbone.core.sharedkernel.domain.AggregateId
 import com.bankbone.core.sharedkernel.domain.AggregateRoot
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
-import com.bankbone.core.sharedkernel.domain.OutboxRepository
+import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import com.bankbone.core.sharedkernel.ports.EventSerializer
 
 /**

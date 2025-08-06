@@ -2,7 +2,7 @@ package com.bankbone.core.sharedkernel.infrastructure
 
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEventStatus
-import com.bankbone.core.sharedkernel.domain.OutboxRepository
+import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant

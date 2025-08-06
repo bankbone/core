@@ -2,7 +2,7 @@ package com.bankbone.core.sharedkernel.application
 
 import com.bankbone.core.sharedkernel.domain.DomainEvent
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
-import com.bankbone.core.sharedkernel.domain.OutboxRepository
+import com.bankbone.core.sharedkernel.ports.OutboxRepository
 import com.bankbone.core.sharedkernel.ports.DomainEventPublisher
 import com.bankbone.core.sharedkernel.ports.EventDeserializer
 import kotlinx.coroutines.coroutineScope
