@@ -38,7 +38,7 @@ class OutboxEventRelayServiceTest {
     fun `should publish pending events and mark them as processed`() = runBlocking {
         // Arrange: Create a pending event in the outbox
         val (pendingEvent, domainEvent) = createTestLedgerTransactionPostedEvent()
-        outboxRepository.save(pendingEvent)
+        outboxRepository.add(pendingEvent)
 
         // Act: Run the relay service
         relayService.relayPendingEvents()
@@ -47,7 +47,7 @@ class OutboxEventRelayServiceTest {
         assertEquals(1, domainEventPublisher.publishedEvents.size)
         val publishedEvent = domainEventPublisher.publishedEvents.first()
         assertTrue(publishedEvent is LedgerTransactionPosted, "Published event should be of the correct type")
-        assertEquals(domainEvent.transactionId, publishedEvent.transactionId)
+        assertEquals(domainEvent.transactionId.toString(), publishedEvent.transactionId.toString())
         assertEquals(BigDecimal("150.50"), publishedEvent.totalAmount)
         assertEquals(Asset("BRL"), publishedEvent.asset)
 
@@ -60,7 +60,7 @@ class OutboxEventRelayServiceTest {
         // Arrange: Simulate 2 failures before success
         domainEventPublisher.setFailures(2)
         val (pendingEvent, _) = createTestLedgerTransactionPostedEvent()
-        outboxRepository.save(pendingEvent)
+        outboxRepository.add(pendingEvent)
 
         // Act
         relayService.relayPendingEvents()
@@ -78,7 +78,7 @@ class OutboxEventRelayServiceTest {
         // Arrange: Simulate 5 failures
         domainEventPublisher.setFailures(5)
         val (pendingEvent, _) = createTestLedgerTransactionPostedEvent()
-        outboxRepository.save(pendingEvent)
+        outboxRepository.add(pendingEvent)
 
         // Act
         relayService.relayPendingEvents()

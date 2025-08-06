@@ -15,6 +15,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.koin.core.qualifier.named
 import org.koin.test.KoinTest
 import org.koin.test.inject
 import org.koin.test.junit5.KoinTestExtension
@@ -25,7 +26,7 @@ import kotlin.test.assertNotNull
 class RenameAccountUseCaseTest : KoinTest {
 
     private val createAccountHandler: CommandHandler<CreateAccountCommand, Account> by inject()
-    private val renameAccountHandler: CommandHandler<RenameAccountCommand, Unit> by inject()
+    private val renameAccountHandler: CommandHandler<RenameAccountCommand, Unit> by inject(named("RenameAccountCommandHandler"))
     private val uowFactory: InMemoryLedgerUnitOfWorkFactory by inject()
     private lateinit var chartOfAccountsRepository: InMemoryChartOfAccountsRepository
 

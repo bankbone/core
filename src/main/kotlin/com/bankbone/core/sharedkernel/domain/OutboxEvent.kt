@@ -1,7 +1,7 @@
 package com.bankbone.core.sharedkernel.domain
 
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 enum class OutboxEventStatus {
     PENDING,
