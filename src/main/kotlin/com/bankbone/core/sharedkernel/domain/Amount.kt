@@ -1,8 +1,13 @@
 package com.bankbone.core.sharedkernel.domain
 
+import com.bankbone.core.sharedkernel.infrastructure.serialization.BigDecimalAsStringSerializer
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
+@Serializable
+@Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
 data class Amount(
+    @Serializable(with = BigDecimalAsStringSerializer::class)
     val value: BigDecimal,
     val asset: Asset // Represents the currency or asset type (e.g., "BRL", "USD")
 ) {

@@ -15,22 +15,16 @@ import java.util.*
  * @param T The type of entity this ID identifies (used for type safety)
  * @property value The underlying UUID value
  */
+@JvmInline
 @kotlinx.serialization.Serializable(with = TypedIdSerializer::class)
-class TypedId<out T>(
+value class TypedId<out T>(
     override val value: UUID
 ) : AggregateId, java.io.Serializable {
     
     /** Returns the string representation of the underlying UUID */
     override fun toString(): String = value.toString()
     
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as TypedId<*>
-        return value == other.value
-    }
-    
-    override fun hashCode(): Int = value.hashCode()
+    // Value classes automatically provide equals and hashCode based on the underlying value
     
     companion object {
         /** Creates a new random ID for the specified type */
