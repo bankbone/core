@@ -2,6 +2,8 @@ package com.bankbone.core.ledger.application.usecases
 
 import com.bankbone.core.ledger.application.commands.CreateAccountCommand
 import com.bankbone.core.ledger.domain.Account
+import com.bankbone.core.ledger.domain.AccountId
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.infrastructure.InMemoryChartOfAccountsRepository
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
@@ -70,7 +72,7 @@ class CreateAccountUseCaseTest : KoinTest, KoinComponent {
             name = "Child Asset",
             type = AccountType.ASSET,
             asset = brl,
-            parentAccountId = parentAccount.id.value.toString()
+            parentAccountId = parentAccount.id
         )
         val childAccount = createAccountHandler.handle(childCommand)
 
@@ -79,18 +81,18 @@ class CreateAccountUseCaseTest : KoinTest, KoinComponent {
 
     @Test
     fun `should fail to create account with non-existent parent`() = runBlocking {
-        val nonExistentParentId = Account.Id.random()
+        val nonExistentParentId: AccountId = TypedId.random()
         val command = CreateAccountCommand(
             name = "Child Asset", 
             type = AccountType.ASSET, 
             asset = brl, 
-            parentAccountId = nonExistentParentId.value.toString()
+            parentAccountId = nonExistentParentId
         )
 
         val exception = assertFailsWith<IllegalArgumentException> {
             createAccountHandler.handle(command)
         }
-        assertEquals("Parent account with ID ${nonExistentParentId.value} does not exist.", exception.message)
+        assertEquals("Parent account with ID $nonExistentParentId does not exist.", exception.message)
     }
 
     @Test

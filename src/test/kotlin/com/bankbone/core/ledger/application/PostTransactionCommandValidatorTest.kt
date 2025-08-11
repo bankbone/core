@@ -2,10 +2,13 @@ package com.bankbone.core.ledger.application
 
 import com.bankbone.core.ledger.application.commands.PostTransactionCommand
 import com.bankbone.core.ledger.domain.Account
-import com.bankbone.core.ledger.domain.Account.Id
+import com.bankbone.core.ledger.domain.AccountId
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
+import com.bankbone.core.ledger.domain.LedgerTransaction
+import com.bankbone.core.ledger.domain.LedgerTransactionId
 import com.bankbone.core.ledger.infrastructure.InMemoryChartOfAccountsRepository
 import com.bankbone.core.sharedkernel.domain.Amount
 import com.bankbone.core.sharedkernel.domain.Asset
@@ -20,7 +23,8 @@ class PostTransactionCommandValidatorTest {
 
     private lateinit var chartOfAccountsRepository: InMemoryChartOfAccountsRepository
     private lateinit var validator: PostTransactionCommandValidator
-    private val account1Id = Id.random()
+    private val account1Id = TypedId.random<Account>()
+    private val account2Id = TypedId.random<Account>()
 
     @BeforeEach
     fun setUp() {
@@ -31,6 +35,9 @@ class PostTransactionCommandValidatorTest {
             chartOfAccountsRepository.add(
                 Account(id = account1Id, name = "Cash", type = AccountType.ASSET, asset = Asset("BRL"))
             )
+            chartOfAccountsRepository.add(
+                Account(id = account2Id, name = "Bank", type = AccountType.ASSET, asset = Asset("BRL"))
+            )
         }
     }
 
@@ -40,7 +47,8 @@ class PostTransactionCommandValidatorTest {
             sourceTransactionId = "tx1",
             description = "Valid transaction",
             entries = listOf(
-                LedgerEntry(account1Id, Amount(BigDecimal.TEN, Asset("BRL")), LedgerEntryType.DEBIT)
+                LedgerEntry(account1Id, Amount(BigDecimal("100"), Asset("BRL")), LedgerEntryType.DEBIT),
+                LedgerEntry(account2Id, Amount(BigDecimal("100"), Asset("BRL")), LedgerEntryType.CREDIT)
             )
         )
         validator.validate(command, chartOfAccountsRepository)
@@ -48,7 +56,14 @@ class PostTransactionCommandValidatorTest {
 
     @Test
     fun `should throw error for blank source transaction ID`() = runBlocking {
-        val command = PostTransactionCommand(" ", "Valid transaction", emptyList())
+        val command = PostTransactionCommand(
+            sourceTransactionId = " ",
+            description = "Valid transaction",
+            entries = listOf(
+                LedgerEntry(account1Id, Amount(BigDecimal("100"), Asset("BRL")), LedgerEntryType.DEBIT),
+                LedgerEntry(account2Id, Amount(BigDecimal("100"), Asset("BRL")), LedgerEntryType.CREDIT)
+            )
+        )
         val exception = assertFailsWith<IllegalArgumentException> {
             validator.validate(command, chartOfAccountsRepository)
         }
@@ -66,7 +81,7 @@ class PostTransactionCommandValidatorTest {
 
     @Test
     fun `should throw error for non-existent account`() = runBlocking {
-        val nonExistentId = Id.random()
+        val nonExistentId = TypedId.random<Account>()
         val command = PostTransactionCommand("tx1", "Invalid", listOf(LedgerEntry(nonExistentId, Amount(BigDecimal.TEN, Asset("BRL")), LedgerEntryType.DEBIT)))
         val exception = assertFailsWith<IllegalArgumentException> {
             validator.validate(command, chartOfAccountsRepository)

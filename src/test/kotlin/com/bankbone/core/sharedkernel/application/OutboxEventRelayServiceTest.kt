@@ -1,6 +1,7 @@
 package com.bankbone.core.sharedkernel.application
 
 import com.bankbone.core.ledger.domain.LedgerTransaction
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import com.bankbone.core.ledger.domain.events.LedgerTransactionPosted
 import com.bankbone.core.sharedkernel.domain.Asset
 import com.bankbone.core.sharedkernel.domain.OutboxEvent
@@ -91,8 +92,8 @@ class OutboxEventRelayServiceTest {
     }
 
     private fun createTestLedgerTransactionPostedEvent(): Pair<OutboxEvent, LedgerTransactionPosted> {
-        val domainEvent = LedgerTransactionPosted(
-            transactionId = LedgerTransaction.Id.random(),
+        val domainEvent = LedgerTransactionPosted.createForTest(
+            transactionId = TypedId.random<LedgerTransaction>(),
             totalAmount = BigDecimal("150.50"),
             asset = Asset("BRL"),
             occurredAt = Instant.parse("2024-07-14T12:00:00Z")

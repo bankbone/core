@@ -1,5 +1,7 @@
 package com.bankbone.core.ledger.domain
 
+import com.bankbone.core.ledger.domain.AccountId
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import com.bankbone.core.sharedkernel.domain.Asset
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -15,7 +17,7 @@ class AccountTest {
     @Test
     fun `should create an account successfully with valid data`() {
         val account = Account(
-            id = Account.Id.random(),
+            id = AccountId.random(),
             name = "Valid Account",
             type = AccountType.ASSET,
             asset = brl
@@ -28,7 +30,7 @@ class AccountTest {
     fun `should fail to create an account with a blank name`() {
         val exception = assertFailsWith<IllegalArgumentException> {
             Account(
-                id = Account.Id.random(),
+                id = AccountId.random(),
                 name = " ",
                 type = AccountType.ASSET,
                 asset = brl
@@ -41,7 +43,7 @@ class AccountTest {
     // If Account becomes a full Entity again, this test should be changed.
     @Test
     fun `should consider two accounts with the same data as equal`() {
-        val id = Account.Id.random()
+        val id: AccountId = TypedId.random()
         val account1 = Account(id, "Cash", AccountType.ASSET, brl, isActive = true)
         val account2 = Account(id, "Cash", AccountType.ASSET, brl, isActive = true)
 
@@ -51,7 +53,7 @@ class AccountTest {
 
     @Test
     fun `should consider two accounts with different data as not equal`() {
-        val id = Account.Id.random()
+        val id: AccountId = TypedId.random()
         val account1 = Account(id, "Cash", AccountType.ASSET, brl)
         val account2 = Account(id, "Cash Renamed", AccountType.ASSET, brl)
 

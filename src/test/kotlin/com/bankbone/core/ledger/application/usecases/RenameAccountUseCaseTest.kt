@@ -3,6 +3,8 @@ package com.bankbone.core.ledger.application.usecases
 import com.bankbone.core.ledger.application.commands.CreateAccountCommand
 import com.bankbone.core.ledger.application.commands.RenameAccountCommand
 import com.bankbone.core.ledger.domain.Account
+import com.bankbone.core.ledger.domain.AccountId
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.infrastructure.InMemoryChartOfAccountsRepository
 import com.bankbone.core.ledger.infrastructure.InMemoryLedgerUnitOfWorkFactory
@@ -48,9 +50,9 @@ class RenameAccountUseCaseTest : KoinTest {
     fun `should rename an account successfully`() = runBlocking {
         // Create an account directly through the repository for testing purposes
         val account = Account(
-            id = Account.Id.random(),
+            id = TypedId.random<Account>(),
             name = "Old Name",
-            type = AccountType.LIABILITY,
+            type = AccountType.ASSET,
             asset = brl
         )
         
@@ -68,12 +70,12 @@ class RenameAccountUseCaseTest : KoinTest {
 
     @Test
     fun `should fail to rename a non-existent account`() = runBlocking {
-        val nonExistentId = Account.Id.random()
-        val command = RenameAccountCommand(nonExistentId, "New Name")
+        val nonExistentAccountId: AccountId = TypedId.random()
+        val command = RenameAccountCommand(nonExistentAccountId, "New Name")
 
         val exception = assertFailsWith<IllegalArgumentException> {
             renameAccountHandler.handle(command)
         }
-        assertEquals("Account with ID $nonExistentId not found.", exception.message)
+        assertEquals("Account with ID $nonExistentAccountId not found.", exception.message)
     }
 }

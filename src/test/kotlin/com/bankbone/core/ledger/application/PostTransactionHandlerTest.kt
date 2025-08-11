@@ -2,7 +2,8 @@ package com.bankbone.core.ledger.application
 
 import com.bankbone.core.ledger.application.commands.PostTransactionCommand
 import com.bankbone.core.ledger.domain.Account
-import com.bankbone.core.ledger.domain.Account.Id
+import com.bankbone.core.ledger.domain.AccountId
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import com.bankbone.core.ledger.domain.AccountType
 import com.bankbone.core.ledger.domain.LedgerEntry
 import com.bankbone.core.ledger.domain.LedgerEntryType
@@ -40,8 +41,8 @@ class PostTransactionHandlerTest : KoinTest {
     private val postTransactionHandler: CommandHandler<PostTransactionCommand, LedgerTransaction> by inject()
     private val uowFactory: InMemoryLedgerUnitOfWorkFactory by inject() // Injected for test inspection
 
-    private val account1Id = Id.random()
-    private val account2Id = Id.random()
+    private val account1Id: AccountId = TypedId.random()
+    private val account2Id: AccountId = TypedId.random()
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -113,8 +114,8 @@ class PostTransactionHandlerTest : KoinTest {
     @Test
     fun `should throw error for non-existent accounts`() { runBlocking {
         val brl = Asset("BRL")
-        val nonExistentId1 = Id.random()
-        val nonExistentId2 = Id.random()
+        val nonExistentId1: AccountId = TypedId.random()
+        val nonExistentId2: AccountId = TypedId.random()
         val entries = listOf(
             LedgerEntry(account1Id, Amount(BigDecimal(100), brl), LedgerEntryType.DEBIT, "Debit entry"),
             LedgerEntry(nonExistentId1, Amount(BigDecimal(50), brl), LedgerEntryType.CREDIT, "Credit entry"), // nonExistentId1 does not exist

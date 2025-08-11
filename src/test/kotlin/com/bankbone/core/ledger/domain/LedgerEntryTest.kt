@@ -1,7 +1,9 @@
 package com.bankbone.core.ledger.domain
 
+import com.bankbone.core.ledger.domain.AccountId
 import com.bankbone.core.sharedkernel.domain.Amount
 import com.bankbone.core.sharedkernel.domain.Asset
+import com.bankbone.core.sharedkernel.domain.ids.TypedId
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import kotlin.test.assertEquals
@@ -10,7 +12,7 @@ import kotlin.test.assertFailsWith
 class LedgerEntryTest {
 
     private val brl = Asset("BRL")
-    private val accountId = Account.Id.random()
+    private val accountId: AccountId = TypedId.random()
 
     @Test
     fun `should create a ledger entry successfully`() {
