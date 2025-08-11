@@ -28,27 +28,4 @@ data class LedgerEntryDto(
     val asset: String,
     val type: String,
     val description: String? = null
-) {
-    companion object {
-        /**
-         * Creates a DTO from a domain LedgerEntry.
-         */
-        fun fromDomain(entry: LedgerEntry): LedgerEntryDto = LedgerEntryDto(
-            accountId = entry.accountId,
-            amount = entry.amount.value.toPlainString(),
-            asset = entry.asset.code,
-            type = entry.type.name,
-            description = entry.description
-        )
-        
-        /**
-         * Converts this DTO to a domain LedgerEntry.
-         */
-        fun toDomain(dto: LedgerEntryDto): LedgerEntry = LedgerEntry(
-            accountId = dto.accountId,
-            amount = Amount(BigDecimal(dto.amount), Asset(dto.asset)),
-            type = LedgerEntryType.valueOf(dto.type),
-            description = dto.description
-        )
-    }
-}
+)

@@ -25,28 +25,4 @@ data class LedgerTransactionDto(
     val description: String,
     val entries: List<LedgerEntryDto>,
     val postedAt: String
-) {
-    companion object {
-        /**
-         * Creates a DTO from a domain LedgerTransaction.
-         */
-        fun fromDomain(transaction: LedgerTransaction): LedgerTransactionDto = LedgerTransactionDto(
-            id = transaction.id,
-            sourceTransactionId = transaction.sourceTransactionId,
-            description = transaction.description,
-            entries = transaction.entries.map { LedgerEntryDto.fromDomain(it) },
-            postedAt = transaction.postedAt.toString()
-        )
-        
-        /**
-         * Converts this DTO to a domain LedgerTransaction.
-         */
-        fun toDomain(dto: LedgerTransactionDto): LedgerTransaction = LedgerTransaction(
-            id = dto.id,
-            sourceTransactionId = dto.sourceTransactionId,
-            description = dto.description,
-            entries = dto.entries.map { LedgerEntryDto.toDomain(it) },
-            postedAt = Instant.parse(dto.postedAt)
-        )
-    }
-}
+)
